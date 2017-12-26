@@ -1,4 +1,7 @@
-namespace Busy
+module Busy
 
-type Busy() = 
-    member this.X = "F#"
+open System
+open System.Text.RegularExpressions
+
+let IsValidObjectPath path = 
+    true

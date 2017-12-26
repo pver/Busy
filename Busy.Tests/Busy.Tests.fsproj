@@ -5,6 +5,11 @@
     <DebugType>portable</DebugType>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Busy\Busy.fsproj">
+      <Name>Busy.fsproj</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="Tests.fs" />
     <Compile Include="Main.fs" />
     <None Include="App.config" />

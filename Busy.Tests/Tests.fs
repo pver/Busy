@@ -1,15 +1,12 @@
 module Tests
 
 open Expecto
+open Busy
 
 [<Tests>]
 let tests =
-  testList "samples" [
-    testCase "universe exists" <| fun _ ->
-      let subject = true
-      Expect.isTrue subject "I compute, therefore I am."
-
-    testCase "should fail" <| fun _ ->
-      let subject = false
-      Expect.isTrue subject "I should fail because the subject is false."
+  testList "IsValidObjectPathTests" [
+    testCase "root object path is valid" <| fun _ ->
+      let subject = Busy.IsValidObjectPath "/"
+      Expect.isTrue subject "Root object path is a valid path"
   ]
