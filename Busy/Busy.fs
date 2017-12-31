@@ -25,7 +25,6 @@ module Utilities =
             | 's' -> String
             | 'o' -> ObjectPath
             | 'g' -> Signature
-            | 'a' -> Array
             | 'r' -> Struct
             | 'v' -> Variant
             | 'e' -> DictEntry
@@ -37,7 +36,14 @@ module Utilities =
             let rec parse (acc:DBusType list) (chars:char list)  = 
                 match chars with
                 | [] -> acc
-                | x::xs -> parse (acc @ [(parseSignatureChar x)]) xs
+                | x::xs -> 
+                            match x with 
+                            | 'a' -> 
+                                     let remainder = parse [] xs
+                                     match remainder with
+                                     | [] -> failwith "Invalid signature array found: no array type specified"
+                                     | arraytype::tail -> acc @ [Array arraytype] @ tail
+                            | _ -> parse (acc @ [(parseSignatureChar x)]) xs
 
             s.ToCharArray() 
             |> Array.toList

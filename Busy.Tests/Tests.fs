@@ -55,4 +55,18 @@ let signatureTests =
       let subject = Busy.Utilities.ParseSignatureToDBusTypes "isdb" |> Seq.toList
       let expected = [DBusType.Int32; DBusType.String; DBusType.Double; DBusType.Boolean] 
       Expect.equal subject expected "Multiple single types signature is parsed correctly"
+
+    testCase "basic array signature is parsed correctly" <| fun _ ->
+      let subject = Busy.Utilities.ParseSignatureToDBusTypes "ai" |> Seq.toList
+      let expected = [DBusType.Array DBusType.Int32] 
+      Expect.equal subject expected "Basic array signature is parsed correctly"
+
+    testCase "basic array of array signature is parsed correctly" <| fun _ ->
+      let subject = Busy.Utilities.ParseSignatureToDBusTypes "aai" |> Seq.toList
+      let expected = [DBusType.Array ( DBusType.Array DBusType.Int32) ]  
+      Expect.equal subject expected "Basic array of array signature is parsed correctly"
+
+    testCase "incomplete array signature fails parsing" <| fun _ ->
+      let subject() = Busy.Utilities.ParseSignatureToDBusTypes "a" |> ignore
+      Expect.throws subject ""
   ]

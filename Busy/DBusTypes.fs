@@ -15,7 +15,7 @@ module Types =
                 | String
                 | ObjectPath
                 | Signature
-                | Array
+                | Array of DBusType
                 | Struct
                 | Variant
                 | DictEntry
