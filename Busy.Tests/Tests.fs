@@ -2,7 +2,9 @@ module Tests
 
 open System
 open Expecto
-open Busy
+open Busy.Utilities
+open Busy.Types
+
 
 [<Tests>]
 let tests =
@@ -41,3 +43,16 @@ let tests =
       Expect.isFalse subject "Object path must not end with a trailing /"
   ]
 
+[<Tests>]
+let signatureTests =
+  testList "ParseSignatureTests" [
+    testCase "basic signature string is parsed correctly" <| fun _ ->
+      let subject = Busy.Utilities.ParseSignatureToDBusTypes "i" |> Seq.toList
+      let expected = [DBusType.Int32] 
+      Expect.equal subject expected "Single simple type signature is parsed correctly"
+
+    testCase "basic signatures string is parsed correctly" <| fun _ ->
+      let subject = Busy.Utilities.ParseSignatureToDBusTypes "isdb" |> Seq.toList
+      let expected = [DBusType.Int32; DBusType.String; DBusType.Double; DBusType.Boolean] 
+      Expect.equal subject expected "Multiple single types signature is parsed correctly"
+  ]
