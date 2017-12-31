@@ -1,7 +1,7 @@
 namespace Busy
 
 module Types =
-        type DBusType = 
+        type DBusPrimitiveType = 
                 Invalid
                 | Byte
                 | Boolean
@@ -15,11 +15,14 @@ module Types =
                 | String
                 | ObjectPath
                 | Signature
+                | UnixFd
+                | Reserved
+
+        type DBusType =
+                Primitive of DBusPrimitiveType
                 | Array of DBusType
                 | Struct
                 | Variant
                 | DictEntry
-                | UnixFd
-                | Reserved
 
 

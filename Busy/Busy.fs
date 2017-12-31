@@ -25,9 +25,6 @@ module Utilities =
             | 's' -> String
             | 'o' -> ObjectPath
             | 'g' -> Signature
-            | 'r' -> Struct
-            | 'v' -> Variant
-            | 'e' -> DictEntry
             | 'h' -> UnixFd
             | 'm' | '*' | '?' -> Reserved
             | x -> failwith (sprintf "Invalid signature character conversion: %c" x)
@@ -43,7 +40,11 @@ module Utilities =
                                      match remainder with
                                      | [] -> failwith "Invalid signature array found: no array type specified"
                                      | arraytype::tail -> acc @ [Array arraytype] @ tail
-                            | _ -> parse (acc @ [(parseSignatureChar x)]) xs
+                            // | 'r' -> Struct
+                            // | 'v' -> Variant
+                            // | 'e' -> DictEntry
+                            | _ -> parse (acc @ [Primitive (parseSignatureChar x)]) xs
+
 
             s.ToCharArray() 
             |> Array.toList
