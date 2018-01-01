@@ -64,9 +64,11 @@ module Utilities =
                 | _ -> let t, remainder = parseSingleType chars
                        parser (acc@t) remainder  
 
+            let parse = parser []
+
             s.ToCharArray() 
             |> Array.toList
-            |> parser []
+            |> parse
             |> List.toSeq
 
 
