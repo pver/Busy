@@ -98,4 +98,24 @@ let signatureTests =
     testCase "empty struct signature fails parsing" <| fun _ ->
       let subject() = Busy.Utilities.ParseSignatureToDBusTypes "()" |> ignore
       Expect.throws subject "Incomplete struct signature should fail compilation"
+
+    testCase "basic array of struct signature is parsed correctly" <| fun _ ->
+      let subject = Busy.Utilities.ParseSignatureToDBusTypes "a(i)" |> Seq.toList
+      let expected = [Array (Struct [Primitive Int32])]  
+      Expect.equal subject expected "Basic array of struct signature is parsed correctly"
+
+    testCase "basic array of multi struct signature is parsed correctly" <| fun _ ->
+      let subject = Busy.Utilities.ParseSignatureToDBusTypes "a(is)" |> Seq.toList
+      let expected = [Array (Struct [Primitive Int32; Primitive String])]  
+      Expect.equal subject expected "Basic array of multi struct signature is parsed correctly"
+
+    testCase "basic array of array of struct signature is parsed correctly" <| fun _ ->
+      let subject = Busy.Utilities.ParseSignatureToDBusTypes "aa(i)" |> Seq.toList
+      let expected = [Array (Array (Struct [Primitive Int32]))]  
+      Expect.equal subject expected "Basic array of array of struct signature is parsed correctly"
+
+    testCase "arrays of struct signature is parsed correctly" <| fun _ ->
+      let subject = Busy.Utilities.ParseSignatureToDBusTypes "a(i)a(s)" |> Seq.toList
+      let expected = [Array (Struct [Primitive Int32]) ; Array (Struct [Primitive String])]  
+      Expect.equal subject expected "Arrays of struct signature is parsed correctly"
   ]
