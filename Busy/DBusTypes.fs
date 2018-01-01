@@ -21,8 +21,8 @@ module Types =
         type DBusType =
                 Primitive of DBusPrimitiveType
                 | Array of DBusType
-                | Struct
+                | Struct of seq<DBusType>
                 | Variant
-                | DictEntry
+                | Dict of (DBusPrimitiveType * DBusType)
 
 
