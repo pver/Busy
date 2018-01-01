@@ -68,5 +68,34 @@ let signatureTests =
 
     testCase "incomplete array signature fails parsing" <| fun _ ->
       let subject() = Busy.Utilities.ParseSignatureToDBusTypes "a" |> ignore
-      Expect.throws subject ""
+      Expect.throws subject "Incomplete array signature should fail compilation"
+
+    testCase "basic struct signature is parsed correctly" <| fun _ ->
+      let subject = Busy.Utilities.ParseSignatureToDBusTypes "(i)" |> Seq.toList
+      let expected = [Struct [Primitive Int32]] 
+      Expect.equal subject expected "Basic struct signature is parsed correctly"
+
+    testCase "basic struct signature (multiple types) is parsed correctly" <| fun _ ->
+      let subject = Busy.Utilities.ParseSignatureToDBusTypes "(iisd)" |> Seq.toList
+      let expected = [Struct [Primitive Int32; Primitive Int32; Primitive String; Primitive Double]] 
+      Expect.equal subject expected "Basic struct signature (multiple types) is parsed correctly"
+
+    testCase "basic struct of struct signature is parsed correctly" <| fun _ ->
+      let subject = Busy.Utilities.ParseSignatureToDBusTypes "((i))" |> Seq.toList
+      let expected = [Struct [Struct [Primitive Int32]] ]  
+      Expect.equal subject expected "Basic struct of struct signature is parsed correctly"
+
+    testCase "basic struct of array signature is parsed correctly" <| fun _ ->
+      let subject = Busy.Utilities.ParseSignatureToDBusTypes "(ai)" |> Seq.toList
+      let expected = [Struct [Array (Primitive Int32)] ]  
+      Expect.equal subject expected "Basic struct of array signature is parsed correctly"
+
+    testCase "basic struct of array of struct signature is parsed correctly" <| fun _ ->
+      let subject = Busy.Utilities.ParseSignatureToDBusTypes "(a(i))" |> Seq.toList
+      let expected = [Struct [Array (Struct [Primitive Int32])] ]  
+      Expect.equal subject expected "Basic struct of array of struct signature is parsed correctly"
+
+    testCase "empty struct signature fails parsing" <| fun _ ->
+      let subject() = Busy.Utilities.ParseSignatureToDBusTypes "()" |> ignore
+      Expect.throws subject "Incomplete struct signature should fail compilation"
   ]
