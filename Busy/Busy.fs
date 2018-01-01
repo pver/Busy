@@ -30,25 +30,43 @@ module Utilities =
             | x -> failwith (sprintf "Invalid signature character conversion: %c" x)
 
         let ParseSignatureToDBusTypes (s:string) : seq<DBusType> =
-            let rec parse (acc:DBusType list) (chars:char list)  = 
+            let rec parseSingleType (chars:char list) : DBusType list*char list  = 
                 match chars with
-                | [] -> acc
+                | [] -> ([],[])
                 | x::xs -> 
                             match x with 
                             | 'a' -> 
-                                     let remainder = parse [] xs
-                                     match remainder with
-                                     | [] -> failwith "Invalid signature array found: no array type specified"
-                                     | arraytype::tail -> acc @ [Array arraytype] @ tail
-                            // | 'r' -> Struct
+                                     let t, remainder = parseSingleType xs
+                                     match t with
+                                     | [] -> failwith "empty array signature found!"
+                                     | [single] -> ([Array single], remainder)
+                                     | _ -> failwith "empty array signature found!"
+
+                            | '(' -> let rec readContainerContent (acc:DBusType list) (stopChar:char) (chars:char list) =
+                                         match chars with
+                                         | [] -> failwith <| sprintf "incomplete container signature found, missing '%c'!" stopChar
+                                         | head::tail when head=stopChar -> (acc, tail)
+                                         | _ -> let t, remainder = parseSingleType chars
+                                                readContainerContent (acc @ t) stopChar remainder
+                                     
+                                     let content, remainder = readContainerContent [] ')' xs
+                                     match content with
+                                     | [] -> failwith "empty struct signature found!"
+                                     | _ -> ([Struct content], remainder)
+                                     
                             // | 'v' -> Variant
                             // | 'e' -> DictEntry
-                            | _ -> parse (acc @ [Primitive (parseSignatureChar x)]) xs
+                            | _ -> ([Primitive (parseSignatureChar x)] , xs)
 
+            let rec parser (acc:DBusType list) (chars:char list) =
+                match chars with
+                | [] -> acc
+                | _ -> let t, remainder = parseSingleType chars
+                       parser (acc@t) remainder  
 
             s.ToCharArray() 
             |> Array.toList
-            |> parse []
+            |> parser []
             |> List.toSeq
 
 
