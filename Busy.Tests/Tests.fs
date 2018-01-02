@@ -118,4 +118,31 @@ let signatureTests =
       let subject = Busy.Utilities.ParseSignatureToDBusTypes "a(i)a(s)" |> Seq.toList
       let expected = [Array (Struct [Primitive Int32]) ; Array (Struct [Primitive String])]  
       Expect.equal subject expected "Arrays of struct signature is parsed correctly"
+    
+    testCase "basic variant is parsed correctly" <| fun _ ->
+      let subject = Busy.Utilities.ParseSignatureToDBusTypes "v" |> Seq.toList
+      let expected = [Variant] 
+      Expect.equal subject expected "Basic variant signature is parsed correctly"
+
+    testCase "basic dictionary signature is parsed correctly" <| fun _ ->
+      let subject = Busy.Utilities.ParseSignatureToDBusTypes "{si}" |> Seq.toList
+      let expected = [Dict (String, Primitive Int32)]  
+      Expect.equal subject expected "Basic dictionary signature is parsed correctly"
+
+    testCase "basic dictionary with container value type signature is parsed correctly" <| fun _ ->
+      let subject = Busy.Utilities.ParseSignatureToDBusTypes "{s(i)}" |> Seq.toList
+      let expected = [Dict (String, Struct [Primitive Int32])]  
+      Expect.equal subject expected "Basic dictionary with container value type signature is parsed correctly"
+
+    testCase "empty dictionary signature fails parsing" <| fun _ ->
+      let subject() = Busy.Utilities.ParseSignatureToDBusTypes "{}" |> ignore
+      Expect.throws subject "Incomplete dictionary signature should fail parsing"
+      
+    testCase "single type dictionary signature fails parsing" <| fun _ ->
+      let subject() = Busy.Utilities.ParseSignatureToDBusTypes "{i}" |> ignore
+      Expect.throws subject "Single type dictionary signature should fail parsing"
+
+    testCase "non basic key type dictionary signature fails parsing" <| fun _ ->
+      let subject() = Busy.Utilities.ParseSignatureToDBusTypes "{(i)s}" |> ignore
+      Expect.throws subject "Non basic key type dictionary signature should fail parsing"
   ]
