@@ -52,19 +52,19 @@ module rec Types =
                 with 
                 member this.Type = match this with
                                    | Invalid -> InvalidType
-                                   | Byte(_) -> ByteType
-                                   | Boolean(_) -> BooleanType
-                                   | Int16(_) -> Int64Type
-                                   | Uint16(_) -> Uint64Type
-                                   | Int32(_) -> Int32Type
-                                   | Uint32(_) -> Uint32Type
-                                   | Int64(_) -> Int64Type
-                                   | Uint64(_) -> Uint64Type
-                                   | Double(_) -> DoubleType
-                                   | String(_) -> StringType
-                                   | ObjectPath(_) -> ObjectPathType
-                                   | Signature(_) -> SignatureType
-                                   | UnixFd(_) -> UnixFdType
+                                   | Byte _ -> ByteType
+                                   | Boolean _ -> BooleanType
+                                   | Int16 _ -> Int64Type
+                                   | Uint16 _ -> Uint64Type
+                                   | Int32 _ -> Int32Type
+                                   | Uint32 _ -> Uint32Type
+                                   | Int64 _ -> Int64Type
+                                   | Uint64 _ -> Uint64Type
+                                   | Double _ -> DoubleType
+                                   | String _ -> StringType
+                                   | ObjectPath _ -> ObjectPathType
+                                   | Signature _ -> SignatureType
+                                   | UnixFd _ -> UnixFdType
                                    | Reserved -> ReservedType
                 member this.Size = let typeAlignment = this.Type.Alignment
                                    match this with
