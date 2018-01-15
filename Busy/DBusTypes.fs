@@ -1,35 +1,6 @@
 namespace Busy
 
 module rec Types =
-
-            
-        type DBusMessageEndianness =
-            LittleEndian
-            | BigEndian
-
-        type DBusMessageType =
-            Invalid = 0uy
-            | MethodCall = 1uy
-            | MethodReturn = 2uy
-            | Error = 3uy
-            | Signal = 4uy
-
-        type DBusMessageFlags =
-            NoReplyExpected = 1uy
-            | NoAutoStart = 2uy
-            | AllowInteractiveAuthorization = 4uy
-
-        type DBusMessage = 
-            {
-                Endianness:DBusMessageEndianness;
-                MessageType:DBusMessageType; // retrieve from headerfieldstype
-                MessageFlags:seq<DBusMessageFlags>;
-                Body : seq<DBusValue>
-            }
-            with 
-            member this.BodyLengthBytes = (this.Body |> Seq.fold (fun acc x -> acc + (uint32 x.Size)) 0u)
-            member this.ProtocolVersion = 1uy
-
         type Signature = string
 
         type DBusPrimitiveValue = 
@@ -65,11 +36,7 @@ module rec Types =
                                    | ObjectPath _ -> ObjectPathType
                                    | Signature _ -> SignatureType
                                    | UnixFd _ -> UnixFdType
-                                   | Reserved -> ReservedType
-                member this.Size = let typeAlignment = this.Type.Alignment
-                                   match this with
-                                   | String x | ObjectPath x | Signature x -> typeAlignment + (System.Text.UTF8Encoding.UTF8.GetByteCount x)  
-                                   | _ -> typeAlignment                             
+                                   | Reserved -> ReservedType                           
 
         type DBusDictEntryValue = DBusPrimitiveValue * DBusValue
 
@@ -85,13 +52,7 @@ module rec Types =
                                    | Array (at, _) -> ArrayType at
                                    | Struct s -> StructType (s |> Seq.map (fun x->x.Type))
                                    | Variant _ -> VariantType
-                                   | Dict (kt, _) -> DictType kt
-                member this.Size = match this with
-                                   | Primitive p -> p.Size
-                                   | Array (_, a) -> 4 + (a |> Seq.fold (fun acc x -> acc + x.Size) 0)
-                                   | Struct s -> failwith "Not Implemented"
-                                   | Variant v -> failwith "Not Implemented"
-                                   | Dict _ -> failwith "Not Implemented"                                   
+                                   | Dict (kt, _) -> DictType kt                               
 
         type DBusPrimitiveType = 
                 InvalidType
@@ -126,12 +87,6 @@ module rec Types =
                                         | SignatureType -> "g"
                                         | UnixFdType -> "h"
                                         | ReservedType -> "m"
-                member this.Alignment = match this with
-                                           | InvalidType | ReservedType -> 0
-                                           | ByteType | SignatureType -> 1 
-                                           | Int16Type | Uint16Type -> 2
-                                           | Int64Type | Uint64Type | DoubleType -> 8
-                                           | StringType | ObjectPathType | BooleanType | Int32Type | Uint32Type | UnixFdType -> 4 
 
         type DBusDictEntryType = (DBusPrimitiveType * DBusType)
 

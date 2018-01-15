@@ -5,6 +5,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="DBusTypes.fs" />
+    <Compile Include="MessageTypes.fs" />
+    <Compile Include="Marshalling.fs" />
     <Compile Include="Busy.fs" />
     <None Include="Script.fsx" />
   </ItemGroup>
