@@ -25,8 +25,8 @@ module rec Types =
                                    | Invalid -> InvalidType
                                    | Byte _ -> ByteType
                                    | Boolean _ -> BooleanType
-                                   | Int16 _ -> Int64Type
-                                   | Uint16 _ -> Uint64Type
+                                   | Int16 _ -> Int16Type
+                                   | Uint16 _ -> Uint16Type
                                    | Int32 _ -> Int32Type
                                    | Uint32 _ -> Uint32Type
                                    | Int64 _ -> Int64Type

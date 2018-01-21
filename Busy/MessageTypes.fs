@@ -21,13 +21,14 @@ module rec MessageTypes =
             | NoAutoStart = 2uy
             | AllowInteractiveAuthorization = 4uy
 
+        type DBusMessageBody = seq<DBusValue>
 
         type DBusMessage = 
             {
                 Endianness : DBusMessageEndianness
                 MessageType : DBusMessageType
                 Flags : seq<DBusMessageFlags>
-                Body : seq<DBusValue>
+                Body : DBusMessageBody
                 Headerfields : seq<DBusMessageHeaderFields>
                 //body length
             }
@@ -57,3 +58,30 @@ module rec MessageTypes =
                                     | Sender _ -> 7uy
                                     | Signature _ -> 8uy
                                     | UnixFds _ -> 9uy
+
+        let createSignal (objectPath:string) (iface:string) (_member:string) (body:DBusMessageBody) = 
+
+            let endianness = match System.BitConverter.IsLittleEndian with
+                             | true -> DBusMessageEndianness.LittleEndian 
+                             | false -> DBusMessageEndianness.BigEndian;
+            let flags = [| DBusMessageFlags.NoReplyExpected |];
+            let signature = body |> Seq.map (fun x -> x.Type.Signature) |> Seq.fold (fun acc x -> sprintf "%s%s" acc x) ""
+            let fields = [|
+                                    Path objectPath;
+                                    Interface iface;
+                                    Member _member;
+                                    Signature signature;
+                                    |]
+            {
+                Endianness = endianness;
+                MessageType = DBusMessageType.Signal;
+                Flags = flags;
+                Body = body;
+                Headerfields = fields;
+            }
+
+        let createMethodCall() = ()
+
+        let createError() = ()
+
+        let createMethodReturn() = ()
