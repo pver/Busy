@@ -81,7 +81,9 @@ module Marshalling =
         | Struct s -> let contentBytes = s |> Seq.fold (fun acc x -> Array.append acc <| marshall (posAfterPadding+acc.Length) endianness x) [||]
                       Array.append padding contentBytes
 
-        | Variant v -> failwith "Not Implemented"
-        | Dict (_, _) -> failwith "Not Implemented"  
+        | Variant v -> let signature = Primitive <| DBusPrimitiveValue.Signature v.Type.Signature
+                       let signatureBytes = marshall posAfterPadding endianness signature
+                       let valueBytes = marshall (posAfterPadding + Array.length signatureBytes) endianness v
+                       Array.concat [|padding; signatureBytes; valueBytes |] 
 
-         
+        | Dict (_, _) -> failwith "Not Implemented"  

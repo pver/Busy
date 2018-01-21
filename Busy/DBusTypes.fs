@@ -44,7 +44,7 @@ module rec Types =
                 Primitive of DBusPrimitiveValue
                 | Array of DBusType*DBusValue[] // Todo: find a way to limit values to be of the specified DBusType !!
                 | Struct of seq<DBusValue>  
-                | Variant of Signature
+                | Variant of DBusValue
                 | Dict of DBusDictEntryType*(DBusDictEntryValue[])
                 with 
                 member this.Type = match this with
