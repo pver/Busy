@@ -6,8 +6,8 @@ module rec MessageTypes =
 
             
         type DBusMessageEndianness =
-            LittleEndian = 'l'
-            | BigEndian = 'B'
+            LittleEndian = 108uy // 'l'
+            | BigEndian = 66uy // 'B'
 
         type DBusMessageType =
             Invalid = 0uy
@@ -30,7 +30,7 @@ module rec MessageTypes =
                 Flags : seq<DBusMessageFlags>
                 Body : DBusMessageBody
                 Headerfields : seq<DBusMessageHeaderFields>
-                //body length
+                SequenceNumber : uint32
             }
             with 
             member this.ProtocolVersion = 1uy
@@ -59,24 +59,41 @@ module rec MessageTypes =
                                     | Signature _ -> 8uy
                                     | UnixFds _ -> 9uy
 
-        let createSignal (objectPath:string) (iface:string) (_member:string) (body:DBusMessageBody) = 
+        let createSignal (sequenceNumber:uint32) (objectPath:string) (iface:string) (_member:string) (body:DBusMessageBody) (sender:Option<string>) (destination:Option<string>) = 
 
             let endianness = match System.BitConverter.IsLittleEndian with
                              | true -> DBusMessageEndianness.LittleEndian 
                              | false -> DBusMessageEndianness.BigEndian;
             let flags = [| DBusMessageFlags.NoReplyExpected |];
             let signature = body |> Seq.map (fun x -> x.Type.Signature) |> Seq.fold (fun acc x -> sprintf "%s%s" acc x) ""
-            let fields = [|
-                                    Path objectPath;
-                                    Interface iface;
-                                    Member _member;
-                                    Signature signature;
-                                    |]
+            
+            let optionalSender = match sender with
+                                 | Some s -> [|Sender s|]
+                                 | None -> [||]
+
+            let optionalDestination = match destination with
+                                      | Some d -> [|Destination d|]
+                                      | None -> [||]
+
+            let fields = Array.concat [|
+                             [|
+                                Path objectPath;
+                                Interface iface;
+                                Member _member;
+                             |];
+                             optionalDestination
+                             [|                                
+                                Signature signature;
+                             |]
+                             optionalSender
+                         |]
+
             {
                 Endianness = endianness;
                 MessageType = DBusMessageType.Signal;
                 Flags = flags;
                 Body = body;
+                SequenceNumber = sequenceNumber;
                 Headerfields = fields;
             }
 

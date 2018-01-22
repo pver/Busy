@@ -87,3 +87,45 @@ module Marshalling =
                        Array.concat [|padding; signatureBytes; valueBytes |] 
 
         | Dict (_, _) -> failwith "Not Implemented"  
+
+    let marshallMessage (message:DBusMessage) : byte[] =
+        let endianness = message.Endianness
+        let bodyBytes = message.Body |> Seq.fold (fun acc x -> Array.append acc <| marshall acc.Length endianness x) [||]
+        
+        let headerFieldsArrayType = (StructType [PrimitiveType ByteType; VariantType])
+
+        let headerFieldToDbusValue (field:DBusMessageHeaderFields) = 
+            let dbusValue = match field with
+                            | Path s -> Primitive <| ObjectPath s
+                            | Interface i -> Primitive <| String i
+                            | Member m -> Primitive <| String m
+                            | ErrorName n -> Primitive <| String n
+                            | ReplySerial s -> Primitive <| Uint32 s
+                            | Destination d -> Primitive <| String d
+                            | Sender s -> Primitive <| String s
+                            | Signature s -> Primitive <| DBusPrimitiveValue.Signature s
+                            | UnixFds _ -> failwith "Not Implemented"                            
+                            | Invalid -> failwith "Invalid field found"
+
+            Struct ([Primitive <| DBusPrimitiveValue.Byte ((byte) field.FieldCode); Variant dbusValue])
+
+        let headerFieldsValues = message.Headerfields |> Seq.map headerFieldToDbusValue |> Seq.toArray
+
+        let headerValues = [
+                            Primitive <| DBusPrimitiveValue.Byte ((byte) message.Endianness)
+                            Primitive <| DBusPrimitiveValue.Byte ((byte) message.MessageType)
+                            Primitive <| DBusPrimitiveValue.Byte (message.Flags |> Seq.fold (fun acc f -> acc ||| ((byte) f) ) 0x00uy)
+                            Primitive <| DBusPrimitiveValue.Byte message.ProtocolVersion
+                            Primitive <| DBusPrimitiveValue.Uint32 ((uint32) bodyBytes.Length)
+                            Primitive <| DBusPrimitiveValue.Uint32 message.SequenceNumber
+                            Array <| (headerFieldsArrayType, headerFieldsValues)
+        ]
+
+        let headerBytes = headerValues |> Seq.fold (fun acc x -> Array.append acc <| marshall acc.Length endianness x) [||]
+        
+        let padding = padToAlignment (headerBytes.Length) 8
+
+        Array.concat [|headerBytes; padding; bodyBytes|]
+
+
+         
