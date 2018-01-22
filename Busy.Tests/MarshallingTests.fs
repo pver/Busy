@@ -94,8 +94,8 @@ let tests =
       let message = createSignal 2ul "/org/freedesktop/DBus" "org.freedesktop.DBus" "NameAcquired" messageBody (Some "org.freedesktop.DBus") (Some ":1.1")
       let bytesLittleEndian = marshallMessage message
       
-      use filewriter = new BinaryWriter(File.Open("testfile.bin", FileMode.Create))
-      filewriter.Write(bytesLittleEndian)
+      // use filewriter = new BinaryWriter(File.Open("testfile.bin", FileMode.Create))
+      // filewriter.Write(bytesLittleEndian)
 
       // bytes as sent by the daemon when aqcuiring name
       let expectedBytesLittleEndian = [|
@@ -123,6 +123,5 @@ let tests =
             0x00uy;
       |]
       
-      Expect.equal (Array.take 100 bytesLittleEndian) (Array.take 100 expectedBytesLittleEndian) "first 100"
       Expect.equal (Array.skip 100 bytesLittleEndian) (Array.skip 100 expectedBytesLittleEndian) "signal 'owner changed' marshalling should result in correct byte representation"
   ]
