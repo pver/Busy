@@ -5,8 +5,6 @@ open MessageTypes
 
 module Marshalling =
 
-    type MarshalledValue = {alignment:int; bytes:byte[]}
-
     let internal nul = [|0x00uy|]
 
     let internal alignment (dbusType:DBusType) =
