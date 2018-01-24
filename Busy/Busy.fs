@@ -4,30 +4,32 @@ module Utilities =
         open System.Text.RegularExpressions
         open Types
 
+        type SignatureParseError = string
+
         let IsValidObjectPath path = 
             match path with
             | "" | null -> false
             | "/" -> true
             | x -> Regex.IsMatch(x, "^(/([A-Z]|[a-z]|[0-9]|_)+)+$")
 
-        let internal parseSignatureChar (c:char) =
+        let internal parseSignatureChar (c:char) : Result<DBusPrimitiveType, SignatureParseError> =
             match c with
-            | '\000' -> InvalidType
-            | 'y' -> ByteType
-            | 'b' -> BooleanType
-            | 'n' -> Int16Type
-            | 'q' -> Uint16Type
-            | 'i' -> Int32Type
-            | 'u' -> Uint32Type
-            | 'x' -> Int64Type
-            | 't' -> Uint64Type
-            | 'd' -> DoubleType
-            | 's' -> StringType
-            | 'o' -> ObjectPathType
-            | 'g' -> SignatureType
-            | 'h' -> UnixFdType
-            | 'm' | '*' | '?' -> ReservedType
-            | x -> failwith (sprintf "Invalid signature character conversion: %c" x)
+            | '\000' -> Ok (InvalidType)
+            | 'y' -> Ok (ByteType)
+            | 'b' -> Ok (BooleanType)
+            | 'n' -> Ok (Int16Type)
+            | 'q' -> Ok (Uint16Type)
+            | 'i' -> Ok (Int32Type)
+            | 'u' -> Ok (Uint32Type)
+            | 'x' -> Ok (Int64Type)
+            | 't' -> Ok (Uint64Type)
+            | 'd' -> Ok (DoubleType)
+            | 's' -> Ok (StringType)
+            | 'o' -> Ok (ObjectPathType)
+            | 'g' -> Ok (SignatureType)
+            | 'h' -> Ok (UnixFdType)
+            | 'm' | '*' | '?' -> Ok (ReservedType)
+            | x -> Error ( sprintf "Invalid signature char '%c' found" x)
 
         let ParseSignatureToDBusTypes (s:string) : seq<DBusType> =
             let rec parseSingleType (chars:char list) : DBusType list*char list  = 
@@ -63,7 +65,10 @@ module Utilities =
                                      | [PrimitiveType keytype; valuetype] -> ([DictType (keytype, valuetype)], remainder)
                                      | _ -> failwith "invalid dictionary signature found, exactly one basic key type and one value type are allowed!"
 
-                            | _ -> ([PrimitiveType (parseSignatureChar x)] , xs)
+                            | _ ->  let parsePrimitiveTypeChar = parseSignatureChar x
+                                    match parsePrimitiveTypeChar with
+                                    | Ok t -> ([PrimitiveType t] , xs)
+                                    | Error e -> failwith e
 
             let rec parser (acc:DBusType list) (chars:char list) =
                 match chars with
