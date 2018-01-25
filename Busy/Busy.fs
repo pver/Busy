@@ -31,56 +31,67 @@ module Utilities =
             | 'm' | '*' | '?' -> Ok (ReservedType)
             | x -> Error ( sprintf "Invalid signature char '%c' found" x)
 
-        let ParseSignatureToDBusTypes (s:string) : seq<DBusType> =
-            let rec parseSingleType (chars:char list) : DBusType list*char list  = 
+        let ParseSignatureToDBusTypes (s:string) : Result<DBusType[], SignatureParseError> =
+            let rec parseSingleType (chars:char list) : Result<DBusType list*char list, SignatureParseError>  = 
+            
                 let rec readContainerContent (acc:DBusType list) (stopChar:char) (chars:char list) =
                     match chars with
-                    | [] -> failwith <| sprintf "incomplete container signature found, missing '%c'!" stopChar
-                    | head::tail when head=stopChar -> (acc, tail)
-                    | _ ->  let t, remainder = parseSingleType chars
-                            readContainerContent (acc @ t) stopChar remainder
+                    | [] -> Error <| sprintf "incomplete container signature found, missing '%c'!" stopChar
+                    | head::tail when head=stopChar -> Ok (acc, tail)
+                    | _ ->  match parseSingleType chars with
+                            | Error e -> Error e
+                            | Ok (t, remainder) -> readContainerContent (acc @ t) stopChar remainder
 
                 match chars with
-                | [] -> ([],[])
+                | [] -> Ok ([],[])
                 | x::xs -> 
                             match x with 
-                            | 'a' -> 
-                                     let t, remainder = parseSingleType xs
-                                     match t with
-                                     | [] -> failwith "empty array signature found!"
-                                     | [single] -> ([ArrayType single], remainder)
-                                     | _ -> failwith "empty array signature found!"
+                            | 'a' -> match parseSingleType xs with
+                                     | Error e -> Error e
+                                     | Ok (t, remainder) -> 
+                                                             match t with
+                                                             | [] -> Error "empty array signature found!"
+                                                             | [single] -> Ok ([ArrayType single], remainder)
+                                                             | _ -> Error "multi types found in array signature!"
 
-                            | '(' -> let content, remainder = readContainerContent [] ')' xs
-                                     match content with
-                                     | [] -> failwith "empty struct signature found!"
-                                     | _ -> ([StructType content], remainder)
+                            | '(' -> 
+                                    match readContainerContent [] ')' xs with
+                                    | Ok (content, remainder) ->
+                                                                    match content with
+                                                                    | [] -> Error "empty struct signature found!"
+                                                                    | _ -> Ok ([StructType content], remainder)
+                                    | e -> e
                                      
-                            | 'v' -> ([VariantType] , xs)
+                            | 'v' -> Ok ([VariantType] , xs)
 
-                            | '{' -> let content, remainder = readContainerContent [] '}' xs
-                                     match content with
-                                     | [] -> failwith "empty dictionary signature found!"
-                                     | [_] -> failwith "incomplete dictionary signature found, only key type specified!"
-                                     | [PrimitiveType keytype; valuetype] -> ([DictType (keytype, valuetype)], remainder)
-                                     | _ -> failwith "invalid dictionary signature found, exactly one basic key type and one value type are allowed!"
+                            | '{' -> 
+                                    match readContainerContent [] '}' xs with
+                                    | Error e -> Error e
+                                    | Ok (content, remainder) ->
+                                                                 match content with
+                                                                 | [] -> Error "empty dictionary signature found!"
+                                                                 | [_] -> Error "incomplete dictionary signature found, only key type specified!"
+                                                                 | [PrimitiveType keytype; valuetype] -> Ok ([DictType (keytype, valuetype)], remainder)
+                                                                 | _ -> Error "invalid dictionary signature found, exactly one basic key type and one value type are allowed!"
 
                             | _ ->  let parsePrimitiveTypeChar = parseSignatureChar x
                                     match parsePrimitiveTypeChar with
-                                    | Ok t -> ([PrimitiveType t] , xs)
-                                    | Error e -> failwith e
+                                    | Ok t -> Ok ([PrimitiveType t] , xs)
+                                    | Error e -> Error e
 
             let rec parser (acc:DBusType list) (chars:char list) =
                 match chars with
-                | [] -> acc
-                | _ -> let t, remainder = parseSingleType chars
-                       parser (acc@t) remainder  
+                | [] -> Ok (acc)
+                | _ ->  match parseSingleType chars with
+                        | Error e -> Error e
+                        | Ok (t, remainder) -> parser (acc@t) remainder  
 
             let parse = parser []
 
-            s.ToCharArray() 
-            |> Array.toList
-            |> parse
-            |> List.toSeq
-
+            let parseResult = s.ToCharArray() 
+                              |> Array.toList
+                              |> parse
+            match parseResult with
+            | Ok (types) -> types |> List.toArray |> Ok
+            | Error e -> Error e
 

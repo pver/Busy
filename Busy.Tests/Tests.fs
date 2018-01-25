@@ -43,143 +43,117 @@ let tests =
       Expect.isFalse subject "Object path must not end with a trailing /"
   ]
 
-let validateTypesBackToSignature (signature:string) (types:DBusType list) =
-      let resultingSignature = types |> List.fold (fun acc x -> sprintf "%s%s" acc x.Signature) ""
+let validateTypesBackToSignature (signature:string) (types:DBusType[]) =
+      let resultingSignature = types |> Array.fold (fun acc x -> sprintf "%s%s" acc x.Signature) ""
       Expect.equal resultingSignature signature "Types back to signature should result in the original signature"
+
+let parseValidSignature (signature:string) (expectedTypes:DBusType[]) =
+      let result = Busy.Utilities.ParseSignatureToDBusTypes signature
+      match result with
+      | Error e -> failwith <| sprintf "Expected Ok result for parseable signature, but parsing failed with: '%s'" e
+      | Ok (subject) -> Expect.equal subject expectedTypes <| sprintf "Signature '%s' should be parsed correctly" signature
+                        validateTypesBackToSignature signature expectedTypes
 
 [<Tests>]
 let signatureTests =
   testList "ParseSignatureTests" [
     testCase "basic signature string is parsed correctly" <| fun _ ->
       let signature = "i"
-      let subject = Busy.Utilities.ParseSignatureToDBusTypes signature |> Seq.toList
-      let expected = [PrimitiveType Int32Type] 
-      Expect.equal subject expected "Single simple type signature is parsed correctly"
-      validateTypesBackToSignature signature expected
+      let expectedTypes = [|PrimitiveType Int32Type|] 
+      parseValidSignature signature expectedTypes
 
     testCase "basic signatures string is parsed correctly" <| fun _ ->
       let signature = "isdb"
-      let subject = Busy.Utilities.ParseSignatureToDBusTypes signature |> Seq.toList
-      let expected = [PrimitiveType Int32Type; PrimitiveType StringType; PrimitiveType DoubleType; PrimitiveType BooleanType] 
-      Expect.equal subject expected "Multiple single types signature is parsed correctly"
-      validateTypesBackToSignature signature expected
-
+      let expectedTypes = [|PrimitiveType Int32Type; PrimitiveType StringType; PrimitiveType DoubleType; PrimitiveType BooleanType|] 
+      parseValidSignature signature expectedTypes
 
     testCase "basic array signature is parsed correctly" <| fun _ ->
       let signature = "ai"
-      let subject = Busy.Utilities.ParseSignatureToDBusTypes signature |> Seq.toList
-      let expected = [ArrayType (PrimitiveType Int32Type)] 
-      Expect.equal subject expected "Basic array signature is parsed correctly"
-      validateTypesBackToSignature signature expected
+      let expectedTypes = [|ArrayType (PrimitiveType Int32Type)|] 
+      parseValidSignature signature expectedTypes
 
     testCase "basic array of array signature is parsed correctly" <| fun _ ->
       let signature = "aai"
-      let subject = Busy.Utilities.ParseSignatureToDBusTypes signature |> Seq.toList
-      let expected = [ArrayType (ArrayType (PrimitiveType Int32Type)) ]  
-      Expect.equal subject expected "Basic array of array signature is parsed correctly"
-      validateTypesBackToSignature signature expected
+      let expectedTypes = [|ArrayType (ArrayType (PrimitiveType Int32Type))|]  
+      parseValidSignature signature expectedTypes
 
     testCase "incomplete array signature fails parsing" <| fun _ ->
-      let subject() = Busy.Utilities.ParseSignatureToDBusTypes "a" |> ignore
-      Expect.throws subject "Incomplete array signature should fail compilation"
+      let result = Busy.Utilities.ParseSignatureToDBusTypes "a"
+      Expect.isError result "Incomplete array signature should fail compilation"
 
     testCase "basic struct signature is parsed correctly" <| fun _ ->
       let signature = "(i)"
-      let subject = Busy.Utilities.ParseSignatureToDBusTypes signature |> Seq.toList
-      let expected = [StructType [PrimitiveType Int32Type]] 
-      Expect.equal subject expected "Basic struct signature is parsed correctly"
-      validateTypesBackToSignature signature expected
+      let expectedTypes = [|StructType [PrimitiveType Int32Type]|] 
+      parseValidSignature signature expectedTypes
 
     testCase "basic struct signature (multiple types) is parsed correctly" <| fun _ ->
       let signature = "(iisd)"
-      let subject = Busy.Utilities.ParseSignatureToDBusTypes signature |> Seq.toList
-      let expected = [StructType [PrimitiveType Int32Type; PrimitiveType Int32Type; PrimitiveType StringType; PrimitiveType DoubleType]] 
-      Expect.equal subject expected "Basic struct signature (multiple types) is parsed correctly"
-      validateTypesBackToSignature signature expected
+      let expectedTypes = [|StructType [PrimitiveType Int32Type; PrimitiveType Int32Type; PrimitiveType StringType; PrimitiveType DoubleType]|] 
+      parseValidSignature signature expectedTypes
 
     testCase "basic struct of struct signature is parsed correctly" <| fun _ ->
       let signature = "((i))"
-      let subject = Busy.Utilities.ParseSignatureToDBusTypes signature |> Seq.toList
-      let expected = [StructType [StructType [PrimitiveType Int32Type]] ]  
-      Expect.equal subject expected "Basic struct of struct signature is parsed correctly"
-      validateTypesBackToSignature signature expected
+      let expectedTypes = [|StructType [StructType [PrimitiveType Int32Type]] |]  
+      parseValidSignature signature expectedTypes
 
     testCase "basic struct of array signature is parsed correctly" <| fun _ ->
       let signature = "(ai)"
-      let subject = Busy.Utilities.ParseSignatureToDBusTypes signature |> Seq.toList
-      let expected = [StructType [ArrayType (PrimitiveType Int32Type)] ]  
-      Expect.equal subject expected "Basic struct of array signature is parsed correctly"
-      validateTypesBackToSignature signature expected
+      let expectedTypes = [|StructType [ArrayType (PrimitiveType Int32Type)] |]  
+      parseValidSignature signature expectedTypes
 
     testCase "basic struct of array of struct signature is parsed correctly" <| fun _ ->
       let signature = "(a(i))"
-      let subject = Busy.Utilities.ParseSignatureToDBusTypes "(a(i))" |> Seq.toList
-      let expected = [StructType [ArrayType (StructType [PrimitiveType Int32Type])] ]  
-      Expect.equal subject expected "Basic struct of array of struct signature is parsed correctly"
-      validateTypesBackToSignature signature expected
+      let expectedTypes = [|StructType [ArrayType (StructType [PrimitiveType Int32Type])] |]  
+      parseValidSignature signature expectedTypes
 
     testCase "empty struct signature fails parsing" <| fun _ ->
-      let subject() = Busy.Utilities.ParseSignatureToDBusTypes "()" |> ignore
-      Expect.throws subject "Incomplete struct signature should fail compilation"
+      let result = Busy.Utilities.ParseSignatureToDBusTypes "()"
+      Expect.isError result "Incomplete struct signature should fail compilation"
 
     testCase "basic array of struct signature is parsed correctly" <| fun _ ->
       let signature = "a(i)"
-      let subject = Busy.Utilities.ParseSignatureToDBusTypes signature |> Seq.toList
-      let expected = [ArrayType (StructType [PrimitiveType Int32Type])]  
-      Expect.equal subject expected "Basic array of struct signature is parsed correctly"
-      validateTypesBackToSignature signature expected
+      let expectedTypes = [|ArrayType (StructType [PrimitiveType Int32Type])|]  
+      parseValidSignature signature expectedTypes
 
     testCase "basic array of multi struct signature is parsed correctly" <| fun _ ->
       let signature = "a(is)"
-      let subject = Busy.Utilities.ParseSignatureToDBusTypes signature |> Seq.toList
-      let expected = [ArrayType (StructType [PrimitiveType Int32Type; PrimitiveType StringType])]  
-      Expect.equal subject expected "Basic array of multi struct signature is parsed correctly"
-      validateTypesBackToSignature signature expected
+      let expectedTypes = [|ArrayType (StructType [PrimitiveType Int32Type; PrimitiveType StringType])|]  
+      parseValidSignature signature expectedTypes
 
     testCase "basic array of array of struct signature is parsed correctly" <| fun _ ->
       let signature = "aa(i)"
-      let subject = Busy.Utilities.ParseSignatureToDBusTypes signature |> Seq.toList
-      let expected = [ArrayType (ArrayType (StructType [PrimitiveType Int32Type]))]  
-      Expect.equal subject expected "Basic array of array of struct signature is parsed correctly"
-      validateTypesBackToSignature signature expected
+      let expectedTypes = [|ArrayType (ArrayType (StructType [PrimitiveType Int32Type]))|]  
+      parseValidSignature signature expectedTypes
 
     testCase "arrays of struct signature is parsed correctly" <| fun _ ->
       let signature = "a(i)a(s)"
-      let subject = Busy.Utilities.ParseSignatureToDBusTypes signature |> Seq.toList
-      let expected = [ArrayType (StructType [PrimitiveType Int32Type]) ; ArrayType (StructType [PrimitiveType StringType])]  
-      Expect.equal subject expected "Arrays of struct signature is parsed correctly"
-      validateTypesBackToSignature signature expected
+      let expectedTypes = [|ArrayType (StructType [PrimitiveType Int32Type]) ; ArrayType (StructType [PrimitiveType StringType])|]  
+      parseValidSignature signature expectedTypes
     
     testCase "basic variant is parsed correctly" <| fun _ ->
       let signature = "v"
-      let subject = Busy.Utilities.ParseSignatureToDBusTypes signature |> Seq.toList
-      let expected = [VariantType] 
-      Expect.equal subject expected "Basic variant signature is parsed correctly"
-      validateTypesBackToSignature signature expected
+      let expectedTypes = [|VariantType|] 
+      parseValidSignature signature expectedTypes
 
     testCase "basic dictionary signature is parsed correctly" <| fun _ ->
       let signature = "{si}"
-      let subject = Busy.Utilities.ParseSignatureToDBusTypes signature |> Seq.toList
-      let expected = [DictType (StringType, PrimitiveType Int32Type)]  
-      Expect.equal subject expected "Basic dictionary signature is parsed correctly"
-      validateTypesBackToSignature signature expected
+      let expectedTypes = [|DictType (StringType, PrimitiveType Int32Type)|]  
+      parseValidSignature signature expectedTypes
 
     testCase "basic dictionary with container value type signature is parsed correctly" <| fun _ ->
       let signature = "{s(i)}"
-      let subject = Busy.Utilities.ParseSignatureToDBusTypes signature |> Seq.toList
-      let expected = [DictType (StringType, StructType [PrimitiveType Int32Type])]  
-      Expect.equal subject expected "Basic dictionary with container value type signature is parsed correctly"
-      validateTypesBackToSignature signature expected
+      let expectedTypes = [|DictType (StringType, StructType [PrimitiveType Int32Type])|]  
+      parseValidSignature signature expectedTypes
 
     testCase "empty dictionary signature fails parsing" <| fun _ ->
-      let subject() = Busy.Utilities.ParseSignatureToDBusTypes "{}" |> ignore
-      Expect.throws subject "Incomplete dictionary signature should fail parsing"
+      let result = Busy.Utilities.ParseSignatureToDBusTypes "{}"
+      Expect.isError result "Incomplete dictionary signature should fail parsing"
       
     testCase "single type dictionary signature fails parsing" <| fun _ ->
-      let subject() = Busy.Utilities.ParseSignatureToDBusTypes "{i}" |> ignore
-      Expect.throws subject "Single type dictionary signature should fail parsing"
+      let result = Busy.Utilities.ParseSignatureToDBusTypes "{i}"
+      Expect.isError result "Single type dictionary signature should fail parsing"
 
     testCase "non basic key type dictionary signature fails parsing" <| fun _ ->
-      let subject() = Busy.Utilities.ParseSignatureToDBusTypes "{(i)s}" |> ignore
-      Expect.throws subject "Non basic key type dictionary signature should fail parsing"
+      let result = Busy.Utilities.ParseSignatureToDBusTypes "{(i)s}"
+      Expect.isError result "Non basic key type dictionary signature should fail parsing"
   ]
