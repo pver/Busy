@@ -4,39 +4,95 @@ open Expecto
 
 open Busy.MessageTypes
 open Busy.Types
+open Busy.MarshallingUtilities
 open Busy.Marshalling
-open System.IO
+open Busy.Unmarshalling
+
+
+let marshallLittle = marshall 0 DBusMessageEndianness.LittleEndian
+let marshallBig = marshall 0 DBusMessageEndianness.BigEndian
+
+let testValueMarshalling (value:DBusValue) (expectedLittleEndian:byte[]) (expectedBigEndian:byte[]) =
+      let littleEndian = marshallLittle value
+      let bigEndian = marshallBig value
+
+      Expect.equal littleEndian expectedLittleEndian <| sprintf "%A should have correct little endian bytes" value
+      Expect.equal bigEndian expectedBigEndian <| sprintf "%A should have correct big endian bytes" value
+
+      let unmarshalledLittle = unmarshall (arrayByteProvider expectedLittleEndian) 0 DBusMessageEndianness.LittleEndian value.Type
+      let unmarshalledBig = unmarshall (arrayByteProvider expectedBigEndian) 0 DBusMessageEndianness.BigEndian value.Type
+      
+      match unmarshalledLittle with
+      | Error e -> Expect.isOk unmarshalledLittle e
+      | Ok (unmarshalledValue, _) -> Expect.equal unmarshalledValue value <| sprintf "%A  as little endian bytes should be unmarshalled correctly" value
+      
+      match unmarshalledBig with
+      | Error e -> Expect.isOk unmarshalledBig e
+      | Ok (unmarshalledValue, _) -> Expect.equal unmarshalledValue value <| sprintf "%A  as big endian bytes should be unmarshalled correctly" value
+
 
 [<Tests>]
 let tests =
   testList "marshalling values" [
+    testCase "bool 'false' is marshalled to correct byte representations" <| fun _ ->
+      let value = Primitive (Boolean (false))
+      testValueMarshalling value [|0x00uy; 0x00uy; 0x00uy; 0x00uy|] [|0x00uy;0x00uy;0x00uy;0x00uy|]
+
+    testCase "bool 'true' is marshalled to correct byte representations" <| fun _ ->
+      let value = Primitive (Boolean (true))
+      testValueMarshalling value [|0x01uy; 0x00uy; 0x00uy; 0x00uy|] [|0x00uy;0x00uy;0x00uy;0x01uy|]
+
     testCase "int16 '1000' is marshalled to correct byte representations" <| fun _ ->
-      let subjectAsLittleEndian = marshall 0 DBusMessageEndianness.LittleEndian << Primitive <| (Int16 1000s)
-      let subjectAsBigEndian = marshall 0 DBusMessageEndianness.BigEndian << Primitive <| (Int16 1000s)
-      let expectedLittleEndian = [|0xE8uy; 0x03uy;|]
-      let expectedBigEndian = [|0x03uy; 0xE8uy|]
+      let value = Primitive (Int16 1000s)
+      testValueMarshalling value [|0xE8uy; 0x03uy;|] [|0x03uy; 0xE8uy|]
 
-      Expect.equal subjectAsLittleEndian expectedLittleEndian "1000 should have correct little endian bytes"
-      Expect.equal subjectAsBigEndian expectedBigEndian "1000 should have correct big endian bytes"
+    testCase "int32 '1000' is marshalled to correct byte representations" <| fun _ ->
+      let value = Primitive (Int32 1000)
+      testValueMarshalling value [|0xE8uy; 0x03uy; 0x00uy; 0x00uy|] [|0x00uy; 0x00uy; 0x03uy; 0xE8uy|]
 
-    // testCase "int32 '1000' is marshalled to correct byte representations" <| fun _ ->
-    //   let subjectAsLittleEndian = marshall DBusMessageEndianness.LittleEndian << Primitive <| (Int32 1000)
-    //   let subjectAsBigEndian = marshall DBusMessageEndianness.BigEndian << Primitive <| (Int32 1000)
-    //   let expectedLittleEndian = {alignment=4; bytes= [|0xE8uy; 0x03uy; 0x00uy; 0x00uy|]}
-    //   let expectedBigEndian = {alignment=4; bytes= [|0x00uy; 0x00uy; 0x03uy; 0xE8uy|]}
-    //   Expect.equal (subjectAsLittleEndian |> Seq.toArray) [|expectedLittleEndian|] "1000 should have correct little endian bytes"
-    //   Expect.equal (subjectAsBigEndian |>Seq.toArray) [|expectedBigEndian|] "1000 should have correct big endian bytes"
+    testCase "Struct (int32 '1000';bool 'true') is marshalled to correct byte representations" <| fun _ ->
+      let value = Struct [|Primitive (Int32 1000); Primitive (Boolean (true))|]
+      testValueMarshalling value [|0xE8uy; 0x03uy; 0x00uy; 0x00uy;  // 1000
+                                   0x01uy; 0x00uy; 0x00uy; 0x00uy|] // true
+                                 [|0x00uy; 0x00uy; 0x03uy; 0xE8uy;  // 1000
+                                   0x00uy; 0x00uy; 0x00uy; 0x01uy|] // true
+
+    testCase "objectpath '/myexample' is marshalled to correct byte representations" <| fun _ ->
+      let value = Primitive (ObjectPath "/myexample")
+
+      let expectedLittleEndian = [|0x0Auy; 0x00uy; 0x00uy; 0x00uy; 
+                                   0x2Fuy; 0x6Duy; 0x79uy; 0x65uy; 0x78uy; 0x61uy; 0x6Duy; 0x70uy; 0x6Cuy; 0x65uy; 0x00uy|]
+      let expectedBigEndian = [|0x00uy; 0x00uy; 0x00uy; 0x0Auy; 
+                                0x2Fuy; 0x6Duy; 0x79uy; 0x65uy; 0x78uy; 0x61uy; 0x6Duy; 0x70uy; 0x6Cuy; 0x65uy; 0x00uy|]
+
+      testValueMarshalling value expectedLittleEndian expectedBigEndian
+
+    testCase "signature 'ai' is marshalled to correct byte representations" <| fun _ ->
+      let value = Primitive (Signature "ai")
+      
+      let expectedLittleEndian = [|0x02uy;
+                                   0x61uy; 0x69uy; 0x00uy|]
+      let expectedBigEndian = expectedLittleEndian // single byte length only and utf8 is endianness independent
+
+      testValueMarshalling value expectedLittleEndian expectedBigEndian
 
     testCase "string 'foo' is marshalled to correct byte representations" <| fun _ ->
-      let subjectAsLittleEndian = marshall 0 DBusMessageEndianness.LittleEndian << Primitive <| (String "foo")
-      let expectedLittleEndian = [|0x03uy; 0x00uy; 0x00uy; 0x00uy; 0x66uy; 0x6fuy; 0x6fuy; 0x00uy|]
+      let value = Primitive (String "foo")
       
-      Expect.equal subjectAsLittleEndian expectedLittleEndian "'foo' should have correct little endian bytes"
+      let expectedLittleEndian = [|0x03uy; 0x00uy; 0x00uy; 0x00uy; 
+                                   0x66uy; 0x6fuy; 0x6fuy; 0x00uy|]
+      let expectedBigEndian = [|0x00uy; 0x00uy; 0x00uy; 0x03uy; 
+                                0x66uy; 0x6fuy; 0x6fuy; 0x00uy|]
+
+      testValueMarshalling value expectedLittleEndian expectedBigEndian
       
     testCase "string '+' is marshalled to correct byte representations" <| fun _ ->
-      let subjectAsLittleEndian = marshall 0 DBusMessageEndianness.LittleEndian << Primitive <| (String "+")
+      let value = Primitive (String "+")
+
       let expectedLittleEndian = [|0x01uy; 0x00uy; 0x00uy; 0x00uy; 0x2Buy; 0x00uy;|]
-      Expect.equal subjectAsLittleEndian expectedLittleEndian "'+' should have correct little endian bytes"
+      let expectedBigEndian = [|0x00uy; 0x00uy; 0x00uy; 0x01uy; 0x2Buy; 0x00uy;|]
+      
+      testValueMarshalling value expectedLittleEndian expectedBigEndian
 
     testCase "string sequence is marshalled to correct byte representations" <| fun _ ->
       let values = [| Primitive (String "foo")
@@ -60,22 +116,15 @@ let tests =
                                     0x00uy                              // trailing nul
                                    |]
       Expect.equal subjectAsLittleEndian expectedLittleEndian "string sequance should have correct little endian bytes"
-
-    // testCase "int32 '100' is marshalled to correct byte representations" <| fun _ ->
-    //   let subjectAsLittleEndian = marshall DBusMessageEndianness.LittleEndian << Primitive <| (Int32 100)
-    //   let subjectAsBigEndian = marshall DBusMessageEndianness.BigEndian << Primitive <| (Int32 100)
-    //   let expectedLittleEndian = {alignment=4; bytes= [|100uy; 0x00uy; 0x00uy; 0x00uy|]}
-    //   let expectedBigEndian = {alignment=4; bytes= [|0x00uy; 0x00uy; 0x00uy; 100uy|]}
-    //   Expect.equal (subjectAsLittleEndian |> Seq.toArray) [|expectedLittleEndian|] "100 should have correct little endian bytes"
-    //   Expect.equal (subjectAsBigEndian |>Seq.toArray) [|expectedBigEndian|] "100 should have correct big endian bytes"
+    
+    testCase "Empty int32[] is marshalled to correct byte representations" <| fun _ ->
+      let value = Array (PrimitiveType Int32Type, [||])
+      testValueMarshalling value [|0x00uy; 0x00uy; 0x00uy; 0x00uy|] [|0x00uy; 0x00uy; 0x00uy; 0x00uy|] // just the byte size (=0) as uint32
 
     testCase "array int64 ['5'] is marshalled to correct byte representations" <| fun _ ->
       let array = [|(Primitive <| (Int64 5L))|]
       let arrayValue = Array (DBusType.PrimitiveType Int64Type, array)
 
-      let subjectAsLittleEndian = marshall 8 DBusMessageEndianness.LittleEndian arrayValue
-      let subjectAsBigEndian = marshall 8 DBusMessageEndianness.BigEndian arrayValue
-      
       let expectedLittleEndian = [| 
                                     8uy; 0uy; 0uy; 0uy;                       // n = 8 bytes of data
                                     0uy; 0uy; 0uy; 0uy;                       // padding to 8-byte boundary
@@ -85,8 +134,7 @@ let tests =
                                     0uy; 0uy; 0uy; 0uy;                       // padding to 8-byte boundary
                                     0uy; 0uy; 0uy; 0uy; 0uy; 0uy; 0uy; 5uy|]  // first element = 5
 
-      Expect.equal subjectAsLittleEndian expectedLittleEndian "array int64 ['5'] should have correct little endian bytes"
-      Expect.equal subjectAsBigEndian expectedBigEndian "array int64 ['5'] should have correct big endian bytes"  
+      testValueMarshalling arrayValue expectedLittleEndian expectedBigEndian
 
     testCase "signal 'owner changed' marshalling should result in correct byte representation" <| fun _ ->
 

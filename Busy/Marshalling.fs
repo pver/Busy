@@ -7,10 +7,10 @@ open MarshallingUtilities
 module Marshalling =
 
     let internal padToAlignment (streamPosition) (alignment:int) =
-            let paddingSize = (alignment - ((int32) (streamPosition % (alignment)))) % alignment
+            let paddingSize = paddingSize streamPosition alignment
             Array.init paddingSize (fun _ -> 0x00uy)
 
-    let rec marshall (streamPosition:int) (endianness:DBusMessageEndianness) (value:DBusValue) : byte[] =
+    let rec marshall (streamPosition:StreamPosition) (endianness:DBusMessageEndianness) (value:DBusValue) : byte[] =
         let applyEndianness = match System.BitConverter.IsLittleEndian && (endianness<>DBusMessageEndianness.LittleEndian) with
                               | true -> Array.rev
                               | false -> id
@@ -90,7 +90,7 @@ module Marshalling =
                             | UnixFds _ -> failwith "Not Implemented"                            
                             | Invalid -> failwith "Invalid field found"
 
-            Struct ([Primitive <| DBusPrimitiveValue.Byte ((byte) field.FieldCode); Variant dbusValue])
+            Struct ([|Primitive <| DBusPrimitiveValue.Byte ((byte) field.FieldCode); Variant dbusValue|])
 
         let headerFieldsValues = message.Headerfields |> Seq.map headerFieldToDbusValue |> Seq.toArray
 

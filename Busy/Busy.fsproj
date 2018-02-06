@@ -6,10 +6,10 @@
   <ItemGroup>
     <Compile Include="DBusTypes.fs" />
     <Compile Include="MessageTypes.fs" />
+    <Compile Include="Utilities.fs" />
     <Compile Include="MarshallingUtilities.fs" />
     <Compile Include="Marshalling.fs" />
     <Compile Include="Unmarshalling.fs" />
-    <Compile Include="Busy.fs" />
     <None Include="Script.fsx" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />

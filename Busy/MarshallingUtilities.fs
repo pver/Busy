@@ -2,8 +2,15 @@ namespace Busy
 
 open Types
 
-module internal MarshallingUtilities =
+module MarshallingUtilities =
+    
+    type StreamPosition = int
 
+    /// Function providing a number of bytes from start position and with a certain length
+    type ByteProvider = StreamPosition -> int -> byte[]
+        
+    let arrayByteProvider (arr:byte[]) : ByteProvider = (fun from length -> Array.sub arr from length)
+    
     let internal nul = [|0x00uy|]
 
     let internal alignment (dbusType:DBusType) =
@@ -19,3 +26,11 @@ module internal MarshallingUtilities =
         | VariantType -> 1
         | ArrayType _ -> 4
         | StructType _ | DictType _ -> 8
+
+    let internal fromUtf8Bytes = System.Text.Encoding.UTF8.GetString
+    let internal toUtf8Bytes (s:string)  = System.Text.Encoding.UTF8.GetBytes s
+
+    let internal byteSize (dbusType:DBusPrimitiveType) = alignment <| PrimitiveType dbusType
+
+    let internal paddingSize (streamPosition:StreamPosition) (alignment:int) = 
+        (alignment - ((int32) (streamPosition % (alignment)))) % alignment
