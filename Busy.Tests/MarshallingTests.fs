@@ -171,5 +171,12 @@ let tests =
             0x00uy;
       |]
       
-      Expect.equal (Array.skip 100 bytesLittleEndian) (Array.skip 100 expectedBytesLittleEndian) "signal 'owner changed' marshalling should result in correct byte representation"
+      Expect.equal bytesLittleEndian expectedBytesLittleEndian "signal 'owner changed' marshalling should result in correct byte representation"
+
+      let unmarshalledMessage = unmarshallMessage (arrayByteProvider bytesLittleEndian)
+      
+      match unmarshalledMessage with
+      | Error e -> Expect.isOk unmarshalledMessage e
+      | Ok (unmarshalledMessage) -> Expect.equal unmarshalledMessage message "signal 'owner changed' unmarshalling should result in original message"
+
   ]

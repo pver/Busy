@@ -5,7 +5,7 @@ open MessageTypes
 open MarshallingUtilities
 open System
 
-module Unmarshalling =
+module rec Unmarshalling =
 
     /// Function providing a number of bytes from start position and with a certain length
     type ByteProvider = StreamPosition -> int -> byte[]
@@ -60,20 +60,11 @@ module Unmarshalling =
                                     | UnixFdType -> Error "Not Implemented"
                                     | ReservedType -> Error "ReservedType cannot be unmarshalled"
                                 
-                                unmarshalledValue |> Result.bind (fun (v,p) -> Ok (Primitive v, p))
+                                unmarshalledValue 
+                                |> Result.map (fun (v,p) -> Primitive v, p)
 
-        | StructType types -> let accStart = Ok (Struct [||], posAfterPadding)
-                              types 
-                              |> Seq.fold (fun acc subType -> 
-                                                        acc |> Result.bind (fun (accDbValue, accP) -> 
-                                                            match accDbValue with
-                                                            | Struct accValues ->
-                                                                unmarshall getbytes accP endianness subType
-                                                                |> Result.bind (fun (value, newP) -> Ok (Struct <| (Array.append accValues [|value|]), newP) ) 
-                                                            | _ -> Error "Expected Struct acc value while parsing struct"
-                                                            )
-
-                               ) accStart
+        | StructType types -> unmarshallValues getbytes posAfterPadding endianness (Seq.toArray types)
+                              |> Result.map (fun (values, newPos) -> Struct values, newPos)
                            
         | ArrayType arrayType -> 
                             unmarshall getbytes posAfterPadding endianness (PrimitiveType Uint32Type)
@@ -98,7 +89,7 @@ module Unmarshalling =
                                                                         )
 
                                                                     getArrayValues (Ok(DBusValue.Array (arrayType, [||]),0))
-                                                                    |> Result.bind (fun (arrVal,_) -> Ok (arrVal,endPosOfContent))
+                                                                    |> Result.map (fun (arrVal,_) -> arrVal,endPosOfContent)
                                                                     
                                 | unexpected -> Error <| sprintf "Expected UInt content length value while parsing array, but found %A" unexpected.Type
                             )
@@ -116,3 +107,55 @@ module Unmarshalling =
                         )
 
         | DictType(_) -> Error "Not Implemented"
+
+    let rec unmarshallValues (getbytes:ByteProvider) (streamPosition:StreamPosition) (endianness:DBusMessageEndianness) (valueTypes:DBusType[]) : Result<DBusValue[]*StreamPosition, string> =
+        let accStart = Ok ([||], streamPosition)
+        valueTypes 
+        |> Seq.fold (fun acc valueType -> 
+             acc |> Result.bind (fun (accValues, accPos) -> 
+                      unmarshall getbytes accPos endianness valueType
+                      |> Result.map (fun (value, newAccPos) -> (Array.append accValues [|value|]), newAccPos) 
+                 )
+
+        ) accStart
+
+    let internal unmarshallHeader (getbytes:ByteProvider) (streamPosition:StreamPosition) (endianness:DBusMessageEndianness) =
+        let headerValueTypes = [| PrimitiveType ByteType;
+                                  PrimitiveType ByteType;
+                                  PrimitiveType ByteType;
+                                  PrimitiveType Uint32Type;
+                                  PrimitiveType Uint32Type;
+                                  ArrayType (StructType [|PrimitiveType ByteType; VariantType|])
+                                  |] // we already have the endianness, excluding it from the beginning of internal header values
+        unmarshallValues getbytes streamPosition endianness headerValueTypes
+
+    let unmarshallMessage (getbytes:ByteProvider) : Result<DBusMessage,string> =
+        let endiannessByte = getbytes 0 1 |> Array.head
+        
+        let endiannessResult = match endiannessByte with
+                               | v when v = byte DBusMessageEndianness.LittleEndian -> Ok(DBusMessageEndianness.LittleEndian)
+                               | v when v = byte DBusMessageEndianness.BigEndian -> Ok(DBusMessageEndianness.BigEndian)
+                               | unknown -> Error <| sprintf "Invalid endianness byte in message bytes: %A" unknown
+
+        endiannessResult 
+        |> Result.bind (fun endianness -> 
+                            unmarshallHeader getbytes 1 endianness
+                            |> Result.bind (fun (headerValues, pos) -> 
+
+                                                                        let messageType = match headerValues.[0] with Primitive (Byte x) -> x | _ -> failwith "Invalid message type"
+                                                                        let bodyLength = match headerValues.[3] with Primitive (Uint32 x) -> x | _ -> failwith "Invalid bodyLength type"
+                                                                        let sequenceNumber = match headerValues.[4] with Primitive (Uint32 x) -> x | _ -> failwith "Invalid sequenceNumber type"
+                                                                        
+                                                                        // Todo: parse body
+                                                                        
+                                                                        let msg = {
+                                                                                       Endianness = endianness;
+                                                                                       MessageType = Microsoft.FSharp.Core.LanguagePrimitives.EnumOfValue<byte, DBusMessageType>(messageType);
+                                                                                       Flags = [||];
+                                                                                       Body = [||];
+                                                                                       Headerfields = [||];
+                                                                                       SequenceNumber = sequenceNumber;
+                                                                                  }
+                                                                        Ok (msg)
+                        )
+        )
