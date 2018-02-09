@@ -34,7 +34,7 @@ module rec MessageTypes =
             }
             with 
             member this.ProtocolVersion = 1uy
-
+        
         type DBusMessageHeaderFields =
             Invalid 
             | Path of string

@@ -87,7 +87,7 @@ module Marshalling =
                             | Destination d -> Primitive <| String d
                             | Sender s -> Primitive <| String s
                             | Signature s -> Primitive <| DBusPrimitiveValue.Signature s
-                            | UnixFds _ -> failwith "Not Implemented"                            
+                            | UnixFds u -> Primitive <| Uint32 u                          
                             | Invalid -> failwith "Invalid field found"
 
             Struct ([|Primitive <| DBusPrimitiveValue.Byte ((byte) field.FieldCode); Variant dbusValue|])
@@ -107,7 +107,7 @@ module Marshalling =
         let headerBytes = headerValues |> Seq.fold (fun acc x -> Array.append acc <| marshall acc.Length endianness x) [||]
         
         let padding = padToAlignment (headerBytes.Length) 8
-
+        
         Array.concat [|headerBytes; padding; bodyBytes|]
 
 
