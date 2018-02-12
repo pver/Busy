@@ -7,8 +7,10 @@ module MarshallingUtilities =
     type StreamPosition = int
 
     /// Function providing a number of bytes from start position and with a certain length
+    /// Todo: rework to interface  https://fsharpforfunandprofit.com/posts/interfaces/
     type ByteProvider = StreamPosition -> int -> byte[]
         
+    /// Todo: rework to object expression implementing IByteProvider interface https://fsharpforfunandprofit.com/posts/object-expressions/
     let arrayByteProvider (arr:byte[]) : ByteProvider = (fun from length -> Array.sub arr from length)
     
     let internal nul = [|0x00uy|]
