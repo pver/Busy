@@ -27,9 +27,9 @@ module rec MessageTypes =
             {
                 Endianness : DBusMessageEndianness
                 MessageType : DBusMessageType
-                Flags : seq<DBusMessageFlags>
+                Flags : DBusMessageFlags[]
                 Body : DBusMessageBody
-                Headerfields : seq<DBusMessageHeaderFields>
+                Headerfields : DBusMessageHeaderFields[]
                 SequenceNumber : uint32
             }
             with 
@@ -73,12 +73,24 @@ module rec MessageTypes =
             match destination with
             | Some d -> [|Destination d|]
             | None -> [||]
+        
+        let private getOptionalInterface iface = 
+            match iface with
+            | Some i -> [|Interface i|]
+            | None -> [||]
 
         let private getOptionalBodySignature (body:DBusMessageBody) =
             let signature = body |> Seq.map (fun x -> x.Type.Signature) |> Seq.fold (fun acc x -> sprintf "%s%s" acc x) ""
             match signature with
             | "" -> [||]
-            | x -> [|Signature signature|]
+            | x -> [|Signature x|]
+
+        let private createMessageHeaderFields (body:DBusMessageBody) (sender:Option<string>) (destination:Option<string>) =
+            Array.concat [|
+                getOptionalDestination destination
+                getOptionalBodySignature body
+                getOptionalSender sender
+            |]
 
         let private createMessage endianness messageType flags body sequenceNumber fields =
             {
@@ -93,92 +105,63 @@ module rec MessageTypes =
         let createSignal (sequenceNumber:uint32) (objectPath:string) (iface:string) (_member:string) (body:DBusMessageBody) (sender:Option<string>) (destination:Option<string>) = 
             let endianness = systemEndianness
             let flags = [| DBusMessageFlags.NoReplyExpected |];
-            let optionalSignature = getOptionalBodySignature body
-            
-            let optionalSender = getOptionalSender sender
-            let optionalDestination = getOptionalDestination destination
 
-            let fields = Array.concat [|
-                             [|
-                                Path objectPath;
-                                Interface iface;
-                                Member _member;
-                             |];
-                             optionalDestination
-                             optionalSignature
-                             optionalSender
-                         |]
+            let headerFields = Array.concat [|
+                                 [|
+                                    Path objectPath;
+                                    Interface iface;
+                                    Member _member;
+                                 |];
+                                 (createMessageHeaderFields body sender destination)
+                              |]
                          
             let messageType = DBusMessageType.Signal
-            createMessage endianness messageType flags body sequenceNumber fields
+            createMessage endianness messageType flags body sequenceNumber headerFields
 
         /// interface is optional for method calls, but recommended
         let createMethodCall (sequenceNumber:uint32) (objectPath:string) (iface:Option<string>) (_member:string) (body:DBusMessageBody) (sender:Option<string>) (destination:Option<string>) = 
             let endianness = systemEndianness
             let flags = [| |];
             
-            let optionalSender = getOptionalSender sender
-            let optionalDestination = getOptionalDestination destination
+            let optionalInterface = getOptionalInterface iface 
 
-            let optionalInterface = match iface with
-                                    | Some i -> [|Interface i|]
-                                    | None -> [||]
-
-            let optionalSignature = getOptionalBodySignature body
-
-            let fields = Array.concat [|
-                             [|
-                                Path objectPath;
-                             |];
-                             optionalInterface;
-                             [|
-                                Member _member;
-                             |];
-                             optionalDestination
-                             optionalSignature
-                             optionalSender
-                         |]
+            let headerFields = Array.concat [|
+                                 [|
+                                    Path objectPath;
+                                 |];
+                                 optionalInterface;
+                                 [|
+                                    Member _member;
+                                 |];
+                                 (createMessageHeaderFields body sender destination)
+                             |]
 
             let messageType = DBusMessageType.MethodCall
-            createMessage endianness messageType flags body sequenceNumber fields
+            createMessage endianness messageType flags body sequenceNumber headerFields
 
         let createError (sequenceNumber:uint32) (replySerial:uint32) (errorName:string) (body:DBusMessageBody) (sender:Option<string>) (destination:Option<string>) = 
             let endianness = systemEndianness
             let flags = [| DBusMessageFlags.NoReplyExpected |];
             
-            let optionalSender = getOptionalSender sender
-            let optionalDestination = getOptionalDestination destination
-                                    
-            let optionalSignature = getOptionalBodySignature body
-
-            let fields = Array.concat [|
-                             optionalDestination
-                             [|
-                                ErrorName errorName;
-                                ReplySerial replySerial;
-                             |];
-                             optionalSignature
-                             optionalSender
-                         |]
+            let headerFields = Array.concat [|
+                                 [|
+                                    ErrorName errorName;
+                                    ReplySerial replySerial;
+                                 |];
+                                 (createMessageHeaderFields body sender destination)
+                             |]
             let messageType = DBusMessageType.Error
-            createMessage endianness messageType flags body sequenceNumber fields     
+            createMessage endianness messageType flags body sequenceNumber headerFields     
 
         let createMethodReturn (sequenceNumber:uint32) (replySerial:uint32) (body:DBusMessageBody) (sender:Option<string>) (destination:Option<string>) = 
             let endianness = systemEndianness
             let flags = [| DBusMessageFlags.NoReplyExpected |];
 
-            let optionalSender = getOptionalSender sender
-            let optionalDestination = getOptionalDestination destination
-                                    
-            let optionalSignature = getOptionalBodySignature body
-
-            let fields = Array.concat [|
-                             optionalDestination
-                             [|
-                                ReplySerial replySerial;
-                             |];
-                             optionalSignature
-                             optionalSender
-                         |]
+            let headerFields = Array.concat [|
+                                 [|
+                                    ReplySerial replySerial;
+                                 |];
+                                 (createMessageHeaderFields body sender destination)
+                             |]
             let messageType = DBusMessageType.MethodReturn
-            createMessage endianness messageType flags body sequenceNumber fields            
+            createMessage endianness messageType flags body sequenceNumber headerFields            
