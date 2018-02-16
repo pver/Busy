@@ -6,6 +6,7 @@
   <ItemGroup>
     <Compile Include="DBusTypes.fs" />
     <Compile Include="MessageTypes.fs" />
+    <Compile Include="MessageFactory.fs" />
     <Compile Include="Utilities.fs" />
     <Compile Include="MarshallingUtilities.fs" />
     <Compile Include="Marshalling.fs" />
