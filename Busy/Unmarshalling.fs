@@ -131,28 +131,27 @@ module rec Unmarshalling =
 
 
     let internal getHeaderField (fieldCode:byte) (fieldValue:DBusValue) =
-
-                                match (fieldCode, fieldValue) with
-                                | (0uy, _) -> Error "Header field Invalid found in header"
-                                | (1uy, Primitive (ObjectPath path)) -> Ok (Some (DBusMessageHeaderFields.Path path))
-                                | (2uy, Primitive (String i)) -> Ok (Some (DBusMessageHeaderFields.Interface i))
-                                | (3uy, Primitive (String m)) -> Ok (Some (DBusMessageHeaderFields.Member m))
-                                | (4uy, Primitive (String e)) -> Ok (Some (DBusMessageHeaderFields.ErrorName e))
-                                | (5uy, Primitive (Uint32 s)) -> Ok (Some (DBusMessageHeaderFields.ReplySerial s))
-                                | (6uy, Primitive (String d)) -> Ok (Some (DBusMessageHeaderFields.Destination d))
-                                | (7uy, Primitive (String s)) -> Ok (Some (DBusMessageHeaderFields.Sender s))
-                                | (8uy, Primitive (DBusPrimitiveValue.Signature s)) -> Ok (Some (DBusMessageHeaderFields.Signature s))
-                                | (9uy, Primitive (Uint32 u)) -> Ok (Some (DBusMessageHeaderFields.UnixFds u))
-                                | (1uy, _) -> Error "Invalid value type for Path header field"
-                                | (2uy, _) -> Error "Invalid value type for Interface header field"
-                                | (3uy, _) -> Error "Invalid value type for Member header field"
-                                | (4uy, _) -> Error "Invalid value type for ErrorName header field"
-                                | (5uy, _) -> Error "Invalid value type for ReplySerial header field"
-                                | (6uy, _) -> Error "Invalid value type for Destination header field"
-                                | (7uy, _) -> Error "Invalid value type for Sender header field"
-                                | (8uy, _) -> Error "Invalid value type for Signature header field"
-                                | (9uy, _) -> Error "Invalid value type for Path header field"
-                                | _ -> Ok (None) // unknown fields should be accepted, but ignored
+        match (fieldCode, fieldValue) with
+        | (0uy, _) -> Error "Header field Invalid found in header"
+        | (1uy, Primitive (ObjectPath path)) -> Ok (Some (DBusMessageHeaderFields.Path path))
+        | (2uy, Primitive (String i)) -> Ok (Some (DBusMessageHeaderFields.Interface i))
+        | (3uy, Primitive (String m)) -> Ok (Some (DBusMessageHeaderFields.Member m))
+        | (4uy, Primitive (String e)) -> Ok (Some (DBusMessageHeaderFields.ErrorName e))
+        | (5uy, Primitive (Uint32 s)) -> Ok (Some (DBusMessageHeaderFields.ReplySerial s))
+        | (6uy, Primitive (String d)) -> Ok (Some (DBusMessageHeaderFields.Destination d))
+        | (7uy, Primitive (String s)) -> Ok (Some (DBusMessageHeaderFields.Sender s))
+        | (8uy, Primitive (DBusPrimitiveValue.Signature s)) -> Ok (Some (DBusMessageHeaderFields.Signature s))
+        | (9uy, Primitive (Uint32 u)) -> Ok (Some (DBusMessageHeaderFields.UnixFds u))
+        | (1uy, _) -> Error "Invalid value type for Path header field"
+        | (2uy, _) -> Error "Invalid value type for Interface header field"
+        | (3uy, _) -> Error "Invalid value type for Member header field"
+        | (4uy, _) -> Error "Invalid value type for ErrorName header field"
+        | (5uy, _) -> Error "Invalid value type for ReplySerial header field"
+        | (6uy, _) -> Error "Invalid value type for Destination header field"
+        | (7uy, _) -> Error "Invalid value type for Sender header field"
+        | (8uy, _) -> Error "Invalid value type for Signature header field"
+        | (9uy, _) -> Error "Invalid value type for Path header field"
+        | _ -> Ok (None) // unknown fields should be accepted, but ignored
 
     let internal getHeaderFields (fieldStructs:DBusValue[]) =
         let accStart = Ok ([||])
@@ -184,53 +183,53 @@ module rec Unmarshalling =
         |> Result.bind (fun endianness -> 
                             unmarshallHeader getbytes 1 endianness
                             |> Result.bind (fun (headerValues, posAfterHeader) -> 
-                                                                        // todo: return Errors here
-                                                                        let messageType = match headerValues.[0] with Primitive (Byte x) -> x | _ -> failwith "Invalid message type"
-                                                                        let bodyLength = match headerValues.[3] with Primitive (Uint32 x) -> x | _ -> failwith "Invalid bodyLength type"
-                                                                        let sequenceNumber = match headerValues.[4] with Primitive (Uint32 x) -> x | _ -> failwith "Invalid sequenceNumber type"
-                                                                        let messageFlagsByte = match headerValues.[1] with Primitive (Byte x) -> x | _ -> failwith "Invalid flags type"
-                                                                        let structTypes = [|PrimitiveType ByteType; VariantType|]
-                                                                        let headerFieldsArray = match headerValues.[5] with
-                                                                                                | DBusValue.Array (StructType st, x) when (Seq.toArray st) = structTypes -> x
-                                                                                                | DBusValue.Array (x,y) -> failwith <| sprintf "Match failed: %A %A" x y
-                                                                                                | x -> failwith <| sprintf "Invalid headerFields type: %A" x
+                                    // todo: return Errors here
+                                    let messageType = match headerValues.[0] with Primitive (Byte x) -> x | _ -> failwith "Invalid message type"
+                                    let bodyLength = match headerValues.[3] with Primitive (Uint32 x) -> x | _ -> failwith "Invalid bodyLength type"
+                                    let sequenceNumber = match headerValues.[4] with Primitive (Uint32 x) -> x | _ -> failwith "Invalid sequenceNumber type"
+                                    let messageFlagsByte = match headerValues.[1] with Primitive (Byte x) -> x | _ -> failwith "Invalid flags type"
+                                    let structTypes = [|PrimitiveType ByteType; VariantType|]
+                                    let headerFieldsArray = match headerValues.[5] with
+                                                            | DBusValue.Array (StructType st, x) when (Seq.toArray st) = structTypes -> x
+                                                            | DBusValue.Array (x,y) -> failwith <| sprintf "Match failed: %A %A" x y
+                                                            | x -> failwith <| sprintf "Invalid headerFields type: %A" x
 
-                                                                        let headerFields = match getHeaderFields headerFieldsArray with
-                                                                                           | Ok values -> values
-                                                                                           | Error e -> failwith e // todo: return Error here
+                                    let headerFields = match getHeaderFields headerFieldsArray with
+                                                       | Ok values -> values
+                                                       | Error e -> failwith e // todo: return Error here
 
-                                                                        let bodySignature = headerFields 
-                                                                                            |> Array.choose (fun x -> match x with DBusMessageHeaderFields.Signature s -> Some s | _ -> None)
-                                                                                            |> Array.tryHead
-                                                                        
-                                                                        let body = match bodySignature with
-                                                                                   | Some (s) -> 
-                                                                                                    let bodyTypes = Utilities.ParseSignatureToDBusTypes s
-                                                                                                    let startBodyPos = posAfterHeader + (paddingSize posAfterHeader 8)
-                                                                                                    match bodyTypes with
-                                                                                                    | Ok (types) -> 
-                                                                                                                    match unmarshallValues getbytes startBodyPos endianness types with
-                                                                                                                    | Ok (bodyContents,_) -> bodyContents
-                                                                                                                    | Error e -> failwith e
-                                                                                                                    
-                                                                                                    | Error e -> failwith e
+                                    let bodySignature = headerFields 
+                                                        |> Array.choose (fun x -> match x with DBusMessageHeaderFields.Signature s -> Some s | _ -> None)
+                                                        |> Array.tryHead
+                                    
+                                    let body = match bodySignature with
+                                               | Some (s) -> 
+                                                                let bodyTypes = Utilities.ParseSignatureToDBusTypes s
+                                                                let startBodyPos = posAfterHeader + (paddingSize posAfterHeader 8)
+                                                                match bodyTypes with
+                                                                | Ok (types) -> 
+                                                                                match unmarshallValues getbytes startBodyPos endianness types with
+                                                                                | Ok (bodyContents,_) -> bodyContents
+                                                                                | Error e -> failwith e
+                                                                                
+                                                                | Error e -> failwith e
 
-                                                                                   | None -> [||]
+                                               | None -> [||]
 
-                                                                        // Todo: parse body
-                                                                        let hasMessageFlag (f:DBusMessageFlags) = messageFlagsByte &&& byte f |> (=) 1uy
-                                                                        let flags = Enum.GetValues(typeof<DBusMessageFlags>)
-                                                                                    |> Seq.cast<DBusMessageFlags>
-                                                                                    |> Seq.fold (fun acc x -> if hasMessageFlag x then Array.append acc [|x|] else acc) [||]
+                                    // Todo: parse body
+                                    let hasMessageFlag (f:DBusMessageFlags) = messageFlagsByte &&& byte f |> (=) 1uy
+                                    let flags = Enum.GetValues(typeof<DBusMessageFlags>)
+                                                |> Seq.cast<DBusMessageFlags>
+                                                |> Seq.fold (fun acc x -> if hasMessageFlag x then Array.append acc [|x|] else acc) [||]
 
-                                                                        let msg = {
-                                                                                       Endianness = endianness;
-                                                                                       MessageType = Microsoft.FSharp.Core.LanguagePrimitives.EnumOfValue<byte, DBusMessageType>(messageType);
-                                                                                       Flags = flags;
-                                                                                       Body = body;
-                                                                                       Headerfields = headerFields;
-                                                                                       SequenceNumber = sequenceNumber;
-                                                                                  }
-                                                                        Ok (msg)
+                                    let msg = {
+                                                   Endianness = endianness;
+                                                   MessageType = Microsoft.FSharp.Core.LanguagePrimitives.EnumOfValue<byte, DBusMessageType>(messageType);
+                                                   Flags = flags;
+                                                   Body = body;
+                                                   Headerfields = headerFields;
+                                                   SequenceNumber = sequenceNumber;
+                                              }
+                                    Ok (msg)
                         )
         )
