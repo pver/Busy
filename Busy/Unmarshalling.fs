@@ -223,12 +223,12 @@ module rec Unmarshalling =
                                                 |> Seq.fold (fun acc x -> if hasMessageFlag x then Array.append acc [|x|] else acc) [||]
 
                                     let msg = {
-                                                   Endianness = endianness;
-                                                   MessageType = Microsoft.FSharp.Core.LanguagePrimitives.EnumOfValue<byte, DBusMessageType>(messageType);
-                                                   Flags = flags;
-                                                   Body = body;
-                                                   Headerfields = headerFields;
-                                                   SequenceNumber = sequenceNumber;
+                                                   Endianness = endianness
+                                                   MessageType = Microsoft.FSharp.Core.LanguagePrimitives.EnumOfValue<byte, DBusMessageType>(messageType)
+                                                   Flags = flags
+                                                   Body = body
+                                                   Headerfields = headerFields
+                                                   SequenceNumber = sequenceNumber
                                               }
                                     Ok (msg)
                         )
