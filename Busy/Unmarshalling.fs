@@ -153,7 +153,14 @@ module rec Unmarshalling =
         | (9uy, _) -> Error "Invalid value type for Path header field"
         | _ -> Ok (None) // unknown fields should be accepted, but ignored
 
-    let internal getHeaderFields (fieldStructs:DBusValue[]) =
+    let internal unmarshallHeaderFields headerFields =
+        let structTypes = [|PrimitiveType ByteType; VariantType|]
+        // todo: make this return Result instead of failWith!
+        let fieldStructs = match headerFields with
+                           | DBusValue.Array (StructType st, x) when (Seq.toArray st) = structTypes -> x
+                           | DBusValue.Array (x,y) -> failwith <| sprintf "Match failed: %A %A" x y
+                           | x -> failwith <| sprintf "Invalid headerFields type: %A" x
+
         let accStart = Ok ([||])
         fieldStructs
         |> Seq.fold (fun acc structType -> 
@@ -177,6 +184,19 @@ module rec Unmarshalling =
         | v when v = byte DBusMessageEndianness.BigEndian -> Ok(DBusMessageEndianness.BigEndian)
         | unknown -> Error <| sprintf "Invalid endianness byte in message bytes: %A" unknown
 
+// todo: return Results here
+    let internal unmarshallMessageType messageType =
+        match messageType with Primitive (Byte x) -> x | _ -> failwith "Invalid message type"
+    
+    let internal unmarshallBodyLength bodyLength =
+        match bodyLength with Primitive (Uint32 x) -> x | _ -> failwith "Invalid bodyLength type"
+
+    let internal unmarshallSequenceNumber sequenceNumber =
+        match sequenceNumber with Primitive (Uint32 x) -> x | _ -> failwith "Invalid sequenceNumber type"
+
+    let internal unmarshallFlagsByte flagsByte = 
+        match flagsByte with Primitive (Byte x) -> x | _ -> failwith "Invalid flags type"
+
     let unmarshallMessage (getbytes:ByteProvider) : Result<DBusMessage,string> =
         let endiannessByte = getbytes 0 1 |> Array.head
         
@@ -184,18 +204,12 @@ module rec Unmarshalling =
         |> Result.bind (fun endianness -> 
                             unmarshallHeaderValues getbytes 1 endianness
                             |> Result.bind (fun (headerValues, posAfterHeader) -> 
-                                    // todo: return Errors here
-                                    let messageType = match headerValues.[0] with Primitive (Byte x) -> x | _ -> failwith "Invalid message type"
-                                    let bodyLength = match headerValues.[3] with Primitive (Uint32 x) -> x | _ -> failwith "Invalid bodyLength type"
-                                    let sequenceNumber = match headerValues.[4] with Primitive (Uint32 x) -> x | _ -> failwith "Invalid sequenceNumber type"
-                                    let messageFlagsByte = match headerValues.[1] with Primitive (Byte x) -> x | _ -> failwith "Invalid flags type"
-                                    let structTypes = [|PrimitiveType ByteType; VariantType|]
-                                    let headerFieldsArray = match headerValues.[5] with
-                                                            | DBusValue.Array (StructType st, x) when (Seq.toArray st) = structTypes -> x
-                                                            | DBusValue.Array (x,y) -> failwith <| sprintf "Match failed: %A %A" x y
-                                                            | x -> failwith <| sprintf "Invalid headerFields type: %A" x
+                                    let messageType = unmarshallMessageType headerValues.[0]
+                                    let bodyLength = unmarshallBodyLength headerValues.[3]
+                                    let sequenceNumber = unmarshallSequenceNumber headerValues.[4]
+                                    let messageFlagsByte = unmarshallFlagsByte headerValues.[1]
 
-                                    let headerFields = match getHeaderFields headerFieldsArray with
+                                    let headerFields = match unmarshallHeaderFields headerValues.[5] with
                                                        | Ok values -> values
                                                        | Error e -> failwith e // todo: return Error here
 
