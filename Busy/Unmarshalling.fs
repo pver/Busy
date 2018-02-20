@@ -119,7 +119,7 @@ module rec Unmarshalling =
 
         ) accStart
 
-    let internal unmarshallHeader (getbytes:ByteProvider) (streamPosition:StreamPosition) (endianness:DBusMessageEndianness) =
+    let internal unmarshallHeaderValues (getbytes:ByteProvider) (streamPosition:StreamPosition) (endianness:DBusMessageEndianness) =
         let headerValueTypes = [| PrimitiveType ByteType;
                                   PrimitiveType ByteType;
                                   PrimitiveType ByteType;
@@ -171,17 +171,18 @@ module rec Unmarshalling =
 
         ) accStart
 
+    let internal unmarshallEndiannessFromByte endiannessByte =
+        match endiannessByte with
+        | v when v = byte DBusMessageEndianness.LittleEndian -> Ok(DBusMessageEndianness.LittleEndian)
+        | v when v = byte DBusMessageEndianness.BigEndian -> Ok(DBusMessageEndianness.BigEndian)
+        | unknown -> Error <| sprintf "Invalid endianness byte in message bytes: %A" unknown
+
     let unmarshallMessage (getbytes:ByteProvider) : Result<DBusMessage,string> =
         let endiannessByte = getbytes 0 1 |> Array.head
         
-        let endiannessResult = match endiannessByte with
-                               | v when v = byte DBusMessageEndianness.LittleEndian -> Ok(DBusMessageEndianness.LittleEndian)
-                               | v when v = byte DBusMessageEndianness.BigEndian -> Ok(DBusMessageEndianness.BigEndian)
-                               | unknown -> Error <| sprintf "Invalid endianness byte in message bytes: %A" unknown
-
-        endiannessResult 
+        unmarshallEndiannessFromByte endiannessByte
         |> Result.bind (fun endianness -> 
-                            unmarshallHeader getbytes 1 endianness
+                            unmarshallHeaderValues getbytes 1 endianness
                             |> Result.bind (fun (headerValues, posAfterHeader) -> 
                                     // todo: return Errors here
                                     let messageType = match headerValues.[0] with Primitive (Byte x) -> x | _ -> failwith "Invalid message type"
@@ -223,13 +224,13 @@ module rec Unmarshalling =
                                                 |> Seq.fold (fun acc x -> if hasMessageFlag x then Array.append acc [|x|] else acc) [||]
 
                                     let msg = {
-                                                   Endianness = endianness
-                                                   MessageType = Microsoft.FSharp.Core.LanguagePrimitives.EnumOfValue<byte, DBusMessageType>(messageType)
-                                                   Flags = flags
-                                                   Body = body
-                                                   Headerfields = headerFields
-                                                   SequenceNumber = sequenceNumber
-                                              }
+                                         Endianness = endianness
+                                         MessageType = Microsoft.FSharp.Core.LanguagePrimitives.EnumOfValue<byte, DBusMessageType>(messageType)
+                                         Flags = flags
+                                         Body = body
+                                         Headerfields = headerFields
+                                         SequenceNumber = sequenceNumber
+                                    }
                                     Ok (msg)
                         )
         )
