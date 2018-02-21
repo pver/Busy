@@ -120,16 +120,15 @@ module rec Unmarshalling =
 
         ) accStart
 
-    let internal unmarshallHeaderValues (getbytes:ByteProvider) (streamPosition:StreamPosition) (endianness:DBusMessageEndianness) =
-        let headerValueTypes = [| PrimitiveType ByteType;
+    let private headerValueTypes = [| PrimitiveType ByteType;
                                   PrimitiveType ByteType;
                                   PrimitiveType ByteType;
                                   PrimitiveType Uint32Type;
                                   PrimitiveType Uint32Type;
                                   ArrayType (StructType [|PrimitiveType ByteType; VariantType|])
                                   |] // we already have the endianness, excluding it from the beginning of internal header values
+    let internal unmarshallHeaderValues (getbytes:ByteProvider) (streamPosition:StreamPosition) (endianness:DBusMessageEndianness) =
         unmarshallValues getbytes streamPosition endianness headerValueTypes
-
 
     let internal getHeaderField (fieldCode:byte) (fieldValue:DBusValue) =
         match (fieldCode, fieldValue) with
