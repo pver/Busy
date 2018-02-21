@@ -6,6 +6,13 @@ module Utilities =
 
         type SignatureParseError = string
 
+        type internal ResultBuilder () =
+            member __.Bind(x, f) = Result.bind f x
+            member __.ReturnFrom x = x
+            member __.Return x = Ok x
+            
+        let internal result = ResultBuilder()
+
         let IsValidObjectPath path = 
             match path with
             | "" | null -> false
@@ -94,4 +101,6 @@ module Utilities =
             match parseResult with
             | Ok (types) -> types |> List.toArray |> Ok
             | Error e -> Error e
+
+        let internal prependError (extendedInfo:string) (r:Result<'a,string>) = r |> Result.mapError (fun x -> sprintf "%s %s" extendedInfo x)
 

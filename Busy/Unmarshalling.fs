@@ -2,6 +2,7 @@ namespace Busy
 
 open Types
 open MessageTypes
+open Utilities
 open MarshallingUtilities
 open System
 
@@ -158,7 +159,6 @@ module rec Unmarshalling =
         // todo: make this return Result instead of failWith!
         let fieldStructs = match headerFields with
                            | DBusValue.Array (StructType st, x) when (Seq.toArray st) = structTypes -> x
-                           | DBusValue.Array (x,y) -> failwith <| sprintf "Match failed: %A %A" x y
                            | x -> failwith <| sprintf "Invalid headerFields type: %A" x
 
         let accStart = Ok ([||])
@@ -184,67 +184,56 @@ module rec Unmarshalling =
         | v when v = byte DBusMessageEndianness.BigEndian -> Ok(DBusMessageEndianness.BigEndian)
         | unknown -> Error <| sprintf "Invalid endianness byte in message bytes: %A" unknown
 
-// todo: return Results here
-    let internal unmarshallMessageType messageType =
-        match messageType with Primitive (Byte x) -> x | _ -> failwith "Invalid message type"
-    
-    let internal unmarshallBodyLength bodyLength =
-        match bodyLength with Primitive (Uint32 x) -> x | _ -> failwith "Invalid bodyLength type"
+    let internal unboxUint32 value = match value with Primitive (Uint32 x) -> Ok(x) | x -> Error (sprintf "Invalid DBusValue type, expected Primitive Uint32, but got %A" x.Type)
+    let internal unboxByte value = match value with Primitive (Byte x) -> Ok(x) | x -> Error (sprintf "Invalid DBusValue type, expected Primitive Byte, but got %A" x.Type)       
 
-    let internal unmarshallSequenceNumber sequenceNumber =
-        match sequenceNumber with Primitive (Uint32 x) -> x | _ -> failwith "Invalid sequenceNumber type"
-
-    let internal unmarshallFlagsByte flagsByte = 
-        match flagsByte with Primitive (Byte x) -> x | _ -> failwith "Invalid flags type"
+    let private unmarshallBodyLength bodyLength = unboxUint32 bodyLength |> prependError "Invalid bodyLength type."
+    let private unmarshallSequenceNumber sequenceNumber = unboxUint32 sequenceNumber |> prependError "Invalid sequenceNumber type."
+    let private unmarshallFlagsByte flagsByte = unboxByte flagsByte |> prependError "Invalid flags type."
+    let private unmarshallMessageType messageType = unboxByte messageType |> prependError "Invalid message type."
 
     let unmarshallMessage (getbytes:ByteProvider) : Result<DBusMessage,string> =
         let endiannessByte = getbytes 0 1 |> Array.head
         
-        unmarshallEndiannessFromByte endiannessByte
-        |> Result.bind (fun endianness -> 
-                            unmarshallHeaderValues getbytes 1 endianness
-                            |> Result.bind (fun (headerValues, posAfterHeader) -> 
-                                    let messageType = unmarshallMessageType headerValues.[0]
-                                    let bodyLength = unmarshallBodyLength headerValues.[3]
-                                    let sequenceNumber = unmarshallSequenceNumber headerValues.[4]
-                                    let messageFlagsByte = unmarshallFlagsByte headerValues.[1]
+        result {
+            let! endianness = unmarshallEndiannessFromByte endiannessByte
+            let! (headerValues, posAfterHeader) = unmarshallHeaderValues getbytes 1 endianness
+            let! messageType = unmarshallMessageType headerValues.[0]
+            let! bodyLength = unmarshallBodyLength headerValues.[3]
+            let! sequenceNumber = unmarshallSequenceNumber headerValues.[4]
+            let! messageFlagsByte = unmarshallFlagsByte headerValues.[1]
+            let! headerFields = unmarshallHeaderFields headerValues.[5]
 
-                                    let headerFields = match unmarshallHeaderFields headerValues.[5] with
-                                                       | Ok values -> values
-                                                       | Error e -> failwith e // todo: return Error here
+            let bodySignature = headerFields 
+                                |> Array.choose (fun x -> match x with DBusMessageHeaderFields.Signature s -> Some s | _ -> None)
+                                |> Array.tryHead
+            
+            let body = match bodySignature with
+                       | Some (s) -> 
+                                        let bodyTypes = Utilities.ParseSignatureToDBusTypes s
+                                        let startBodyPos = posAfterHeader + (paddingSize posAfterHeader 8)
+                                        match bodyTypes with
+                                        | Ok (types) -> 
+                                                        match unmarshallValues getbytes startBodyPos endianness types with
+                                                        | Ok (bodyContents,_) -> bodyContents
+                                                        | Error e -> failwith e
+                                                        
+                                        | Error e -> failwith e
 
-                                    let bodySignature = headerFields 
-                                                        |> Array.choose (fun x -> match x with DBusMessageHeaderFields.Signature s -> Some s | _ -> None)
-                                                        |> Array.tryHead
-                                    
-                                    let body = match bodySignature with
-                                               | Some (s) -> 
-                                                                let bodyTypes = Utilities.ParseSignatureToDBusTypes s
-                                                                let startBodyPos = posAfterHeader + (paddingSize posAfterHeader 8)
-                                                                match bodyTypes with
-                                                                | Ok (types) -> 
-                                                                                match unmarshallValues getbytes startBodyPos endianness types with
-                                                                                | Ok (bodyContents,_) -> bodyContents
-                                                                                | Error e -> failwith e
-                                                                                
-                                                                | Error e -> failwith e
+                       | None -> [||]
 
-                                               | None -> [||]
+            let hasMessageFlag (f:DBusMessageFlags) = messageFlagsByte &&& byte f |> (=) 1uy
+            let flags = Enum.GetValues(typeof<DBusMessageFlags>)
+                        |> Seq.cast<DBusMessageFlags>
+                        |> Seq.fold (fun acc x -> if hasMessageFlag x then Array.append acc [|x|] else acc) [||]
 
-                                    // Todo: parse body
-                                    let hasMessageFlag (f:DBusMessageFlags) = messageFlagsByte &&& byte f |> (=) 1uy
-                                    let flags = Enum.GetValues(typeof<DBusMessageFlags>)
-                                                |> Seq.cast<DBusMessageFlags>
-                                                |> Seq.fold (fun acc x -> if hasMessageFlag x then Array.append acc [|x|] else acc) [||]
-
-                                    let msg = {
-                                         Endianness = endianness
-                                         MessageType = Microsoft.FSharp.Core.LanguagePrimitives.EnumOfValue<byte, DBusMessageType>(messageType)
-                                         Flags = flags
-                                         Body = body
-                                         Headerfields = headerFields
-                                         SequenceNumber = sequenceNumber
-                                    }
-                                    Ok (msg)
-                        )
-        )
+            let msg = {
+                 Endianness = endianness
+                 MessageType = Microsoft.FSharp.Core.LanguagePrimitives.EnumOfValue<byte, DBusMessageType>(messageType)
+                 Flags = flags
+                 Body = body
+                 Headerfields = headerFields
+                 SequenceNumber = sequenceNumber
+            }
+            return msg
+        }
