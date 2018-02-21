@@ -192,6 +192,16 @@ module rec Unmarshalling =
     let private unmarshallFlagsByte flagsByte = unboxByte flagsByte |> prependError "Invalid flags type."
     let private unmarshallMessageType messageType = unboxByte messageType |> prependError "Invalid message type."
 
+    let internal unmarshallBody (getbytes:ByteProvider) (startPosBody) endianness bodySignature = 
+        result {
+            match bodySignature with
+            | Some (s) -> 
+                    let! types = Utilities.ParseSignatureToDBusTypes s
+                    let! (bodyContents,_) = unmarshallValues getbytes startPosBody endianness types
+                    return bodyContents
+            | None -> return [||]
+        }
+
     let unmarshallMessage (getbytes:ByteProvider) : Result<DBusMessage,string> =
         let endiannessByte = getbytes 0 1 |> Array.head
         
@@ -211,19 +221,8 @@ module rec Unmarshalling =
                                     | _ -> None)
                                 |> Array.tryHead
             
-            let body = match bodySignature with
-                       | Some (s) -> 
-                            let bodyTypes = Utilities.ParseSignatureToDBusTypes s
-                            let startBodyPos = posAfterHeader + (paddingSize posAfterHeader 8)
-                            match bodyTypes with
-                            | Ok (types) -> 
-                                            match unmarshallValues getbytes startBodyPos endianness types with
-                                            | Ok (bodyContents,_) -> bodyContents
-                                            | Error e -> failwith e
-                                            
-                            | Error e -> failwith e
-
-                       | None -> [||]
+            let startPosBody = posAfterHeader + (paddingSize posAfterHeader 8)
+            let! body = unmarshallBody getbytes startPosBody endianness bodySignature
 
             let hasMessageFlag (f:DBusMessageFlags) = messageFlagsByte &&& byte f |> (=) 1uy
             let flags = Enum.GetValues(typeof<DBusMessageFlags>)
