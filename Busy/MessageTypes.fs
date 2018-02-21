@@ -33,7 +33,7 @@ module rec MessageTypes =
                 SequenceNumber : uint32
             }
             with 
-            member this.ProtocolVersion = 1uy
+            member __.ProtocolVersion = 1uy
         
         type DBusMessageHeaderFields =
             Invalid 

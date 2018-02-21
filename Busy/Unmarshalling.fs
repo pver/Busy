@@ -205,20 +205,23 @@ module rec Unmarshalling =
             let! headerFields = unmarshallHeaderFields headerValues.[5]
 
             let bodySignature = headerFields 
-                                |> Array.choose (fun x -> match x with DBusMessageHeaderFields.Signature s -> Some s | _ -> None)
+                                |> Array.choose (fun x -> 
+                                    match x with 
+                                    | DBusMessageHeaderFields.Signature s -> Some s 
+                                    | _ -> None)
                                 |> Array.tryHead
             
             let body = match bodySignature with
                        | Some (s) -> 
-                                        let bodyTypes = Utilities.ParseSignatureToDBusTypes s
-                                        let startBodyPos = posAfterHeader + (paddingSize posAfterHeader 8)
-                                        match bodyTypes with
-                                        | Ok (types) -> 
-                                                        match unmarshallValues getbytes startBodyPos endianness types with
-                                                        | Ok (bodyContents,_) -> bodyContents
-                                                        | Error e -> failwith e
-                                                        
-                                        | Error e -> failwith e
+                            let bodyTypes = Utilities.ParseSignatureToDBusTypes s
+                            let startBodyPos = posAfterHeader + (paddingSize posAfterHeader 8)
+                            match bodyTypes with
+                            | Ok (types) -> 
+                                            match unmarshallValues getbytes startBodyPos endianness types with
+                                            | Ok (bodyContents,_) -> bodyContents
+                                            | Error e -> failwith e
+                                            
+                            | Error e -> failwith e
 
                        | None -> [||]
 
