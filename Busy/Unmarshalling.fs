@@ -153,29 +153,31 @@ module rec Unmarshalling =
         | (9uy, _) -> Error "Invalid value type for Path header field"
         | _ -> Ok (None) // unknown fields should be accepted, but ignored
 
+    let private headerFieldStructType = [|PrimitiveType ByteType; VariantType|]
+    
     let internal unmarshallHeaderFields headerFields =
-        let structTypes = [|PrimitiveType ByteType; VariantType|]
-        // todo: make this return Result instead of failWith!
-        let fieldStructs = match headerFields with
-                           | DBusValue.Array (StructType st, x) when (Seq.toArray st) = structTypes -> x
-                           | x -> failwith <| sprintf "Invalid headerFields type: %A" x
+        let fieldStructValues = match headerFields with
+                                | DBusValue.Array (StructType st, x) when (Seq.toArray st) = headerFieldStructType -> Ok(x)
+                                | x -> Error <| sprintf "Invalid headerFields type: %A" x
 
         let accStart = Ok ([||])
-        fieldStructs
-        |> Seq.fold (fun acc structType -> 
-             acc |> Result.bind (fun (accValues) -> 
-                      match structType with
-                      | Struct [|Primitive (Byte fieldCode); fieldValue|] -> 
-                                        let v = getHeaderField fieldCode fieldValue
-                                        match v with
-                                        | Ok None -> Ok (accValues)
-                                        | Ok (Some hf) -> Ok (Array.append accValues [|hf|])
-                                        | Error e -> Error e
-                            
-                      | e -> Error <| sprintf "Invalid header field type found: %A" e 
-                 )
+        fieldStructValues
+        |> Result.bind (fun fieldStructs->
+            fieldStructs
+            |> Seq.fold (fun acc structType -> 
+                 acc |> Result.bind (fun (accValues) -> 
+                          match structType with
+                          | Struct [|Primitive (Byte fieldCode); fieldValue|] -> 
+                                            let v = getHeaderField fieldCode fieldValue
+                                            match v with
+                                            | Ok None -> Ok (accValues)
+                                            | Ok (Some hf) -> Ok (Array.append accValues [|hf|])
+                                            | Error e -> Error e
+                                
+                          | e -> Error <| sprintf "Invalid header field type found: %A" e 
+                     )
 
-        ) accStart
+            ) accStart)
 
     let internal unmarshallEndiannessFromByte endiannessByte =
         match endiannessByte with
