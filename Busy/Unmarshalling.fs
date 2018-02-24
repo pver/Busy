@@ -8,10 +8,7 @@ open System
 
 module rec Unmarshalling =
 
-    /// Function providing a number of bytes from start position and with a certain length
-    type ByteProvider = StreamPosition -> int -> byte[]
-
-    let rec unmarshall (getbytes:ByteProvider) (streamPosition:StreamPosition) (endianness:DBusMessageEndianness) (valueType:DBusType) : Result<DBusValue*StreamPosition, string> =
+    let rec unmarshall (byteProvider:IByteProvider) (streamPosition:StreamPosition) (endianness:DBusMessageEndianness) (valueType:DBusType) : Result<DBusValue*StreamPosition, string> =
         let applyEndianness = match System.BitConverter.IsLittleEndian && (endianness<>DBusMessageEndianness.LittleEndian) with
                               | true -> Array.rev
                               | false -> id
@@ -22,10 +19,10 @@ module rec Unmarshalling =
         | PrimitiveType p ->
                                 let sizeOfType = byteSize p
                                 let posAfterValue = posAfterPadding + sizeOfType
-                                let bytes = getbytes posAfterPadding sizeOfType |> applyEndianness
+                                let bytes = byteProvider.ReadBytes posAfterPadding sizeOfType |> applyEndianness
 
                                 let stringFromBytesLength (length:int) (constr:string->DBusPrimitiveValue) = 
-                                    let utf8bytes = getbytes posAfterValue length
+                                    let utf8bytes = byteProvider.ReadBytes posAfterValue length
                                     let value = fromUtf8Bytes utf8bytes
                                     let dbusvalue = constr value
                                     Ok (dbusvalue, posAfterValue + length + 1) // +1 for added nul
@@ -64,18 +61,18 @@ module rec Unmarshalling =
                                 unmarshalledValue 
                                 |> Result.map (fun (v,p) -> Primitive v, p)
 
-        | StructType types -> unmarshallValues getbytes posAfterPadding endianness (Seq.toArray types)
+        | StructType types -> unmarshallValues byteProvider posAfterPadding endianness (Seq.toArray types)
                               |> Result.map (fun (values, newPos) -> Struct values, newPos)
                            
         | ArrayType arrayType -> 
-                            unmarshall getbytes posAfterPadding endianness (PrimitiveType Uint32Type)
+                            unmarshall byteProvider posAfterPadding endianness (PrimitiveType Uint32Type)
                             |> Result.bind(fun (dbusLengthValue, posAfterLengthValue) -> 
                                 match dbusLengthValue with
                                 | Primitive (Uint32 lengthValue) -> 
                                                                     let contentLength = (int) lengthValue
                                                                     let startPosOfContent = (+) posAfterLengthValue (paddingSize posAfterLengthValue <| alignment arrayType )
                                                                     let endPosOfContent = startPosOfContent + contentLength
-                                                                    let contentByteProvider = arrayByteProvider <| getbytes startPosOfContent contentLength
+                                                                    let contentByteProvider = arrayByteProvider <| byteProvider.ReadBytes startPosOfContent contentLength
                                                                     let rec getArrayValues (acc:Result<DBusValue*StreamPosition, string>) = 
                                                                         acc
                                                                         |> Result.bind (fun (accVal,pos) ->
@@ -96,25 +93,25 @@ module rec Unmarshalling =
                             )
 
         | VariantType -> 
-                       unmarshall getbytes posAfterPadding endianness (PrimitiveType DBusPrimitiveType.SignatureType)
+                       unmarshall byteProvider posAfterPadding endianness (PrimitiveType DBusPrimitiveType.SignatureType)
                        |> Result.bind (fun (signatureValue, posAfterSignature)->
                             match signatureValue with
                             | Primitive (DBusPrimitiveValue.Signature s) -> 
                                     let parsedSignatureTypes = Utilities.ParseSignatureToDBusTypes s
                                     match parsedSignatureTypes with
-                                    | Ok signatureTypes -> unmarshall getbytes posAfterSignature endianness (signatureTypes|>Seq.head)
+                                    | Ok signatureTypes -> unmarshall byteProvider posAfterSignature endianness (signatureTypes|>Seq.head)
                                     | Error _ -> Error (sprintf "Invalid signature '%s' found while parsing variant" s)
                             | _ -> Error "Expected Signature value while parsing variant"
                         )
 
         | DictType(_) -> Error "Not Implemented"
 
-    let rec unmarshallValues (getbytes:ByteProvider) (streamPosition:StreamPosition) (endianness:DBusMessageEndianness) (valueTypes:DBusType[]) : Result<DBusValue[]*StreamPosition, string> =
+    let rec unmarshallValues (byteProvider:IByteProvider) (streamPosition:StreamPosition) (endianness:DBusMessageEndianness) (valueTypes:DBusType[]) : Result<DBusValue[]*StreamPosition, string> =
         let accStart = Ok ([||], streamPosition)
         valueTypes 
         |> Seq.fold (fun acc valueType -> 
              acc |> Result.bind (fun (accValues, accPos) -> 
-                      unmarshall getbytes accPos endianness valueType
+                      unmarshall byteProvider accPos endianness valueType
                       |> Result.map (fun (value, newAccPos) -> (Array.append accValues [|value|]), newAccPos) 
                  )
 
@@ -127,8 +124,8 @@ module rec Unmarshalling =
                                   PrimitiveType Uint32Type;
                                   ArrayType (StructType [|PrimitiveType ByteType; VariantType|])
                                   |] // we already have the endianness, excluding it from the beginning of internal header values
-    let internal unmarshallHeaderValues (getbytes:ByteProvider) (streamPosition:StreamPosition) (endianness:DBusMessageEndianness) =
-        unmarshallValues getbytes streamPosition endianness headerValueTypes
+    let internal unmarshallHeaderValues (byteProvider:IByteProvider) (streamPosition:StreamPosition) (endianness:DBusMessageEndianness) =
+        unmarshallValues byteProvider streamPosition endianness headerValueTypes
 
     let internal getHeaderField (fieldCode:byte) (fieldValue:DBusValue) =
         match (fieldCode, fieldValue) with
@@ -193,22 +190,22 @@ module rec Unmarshalling =
     let private unmarshallFlagsByte flagsByte = unboxByte flagsByte |> prependError "Invalid flags type."
     let private unmarshallMessageType messageType = unboxByte messageType |> prependError "Invalid message type."
 
-    let internal unmarshallBody (getbytes:ByteProvider) (startPosBody) endianness bodySignature = 
+    let internal unmarshallBody (byteProvider:IByteProvider) (startPosBody) endianness bodySignature = 
         result {
             match bodySignature with
             | Some (s) -> 
                     let! types = Utilities.ParseSignatureToDBusTypes s
-                    let! (bodyContents,_) = unmarshallValues getbytes startPosBody endianness types
+                    let! (bodyContents,_) = unmarshallValues byteProvider startPosBody endianness types
                     return bodyContents
             | None -> return [||]
         }
 
-    let unmarshallMessage (getbytes:ByteProvider) : Result<DBusMessage,string> =
-        let endiannessByte = getbytes 0 1 |> Array.head
+    let unmarshallMessage (byteProvider:IByteProvider) : Result<DBusMessage,string> =
+        let endiannessByte = byteProvider.ReadBytes 0 1 |> Array.head
         
         result {
             let! endianness = unmarshallEndiannessFromByte endiannessByte
-            let! (headerValues, posAfterHeader) = unmarshallHeaderValues getbytes 1 endianness
+            let! (headerValues, posAfterHeader) = unmarshallHeaderValues byteProvider 1 endianness
             let! messageType = unmarshallMessageType headerValues.[0]
             let! bodyLength = unmarshallBodyLength headerValues.[3]
             let! sequenceNumber = unmarshallSequenceNumber headerValues.[4]
@@ -223,7 +220,7 @@ module rec Unmarshalling =
                                 |> Array.tryHead
             
             let startPosBody = posAfterHeader + (paddingSize posAfterHeader 8)
-            let! body = unmarshallBody getbytes startPosBody endianness bodySignature
+            let! body = unmarshallBody byteProvider startPosBody endianness bodySignature
 
             let hasMessageFlag (f:DBusMessageFlags) = messageFlagsByte &&& byte f |> (=) 1uy
             let flags = Enum.GetValues(typeof<DBusMessageFlags>)
