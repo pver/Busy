@@ -7,11 +7,16 @@ module MarshallingUtilities =
     type StreamPosition = int
 
     type IByteProvider =
-       abstract member ReadBytes: StreamPosition -> int -> byte[]
+       abstract member ReadBytes: int -> byte[]
 
-    let arrayByteProvider (arr:byte[]) : IByteProvider = {   
-        new IByteProvider with 
-            member __.ReadBytes from length = Array.sub arr from length }
+    type ArrayByteProvider (arr:byte[]) =
+        let mutable currentPos = 0
+
+        interface IByteProvider with
+            member __.ReadBytes length = 
+                let bytes = Array.sub arr currentPos length
+                currentPos <- currentPos + length
+                bytes
 
     let internal nul = [|0x00uy|]
 

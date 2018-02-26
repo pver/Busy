@@ -9,7 +9,6 @@ open Busy.MarshallingUtilities
 open Busy.Marshalling
 open Busy.Unmarshalling
 
-
 let marshallLittle = marshall 0 DBusMessageEndianness.LittleEndian
 let marshallBig = marshall 0 DBusMessageEndianness.BigEndian
 
@@ -19,9 +18,9 @@ let testValueMarshalling (value:DBusValue) (expectedLittleEndian:byte[]) (expect
 
       Expect.equal littleEndian expectedLittleEndian <| sprintf "%A should have correct little endian bytes" value
       Expect.equal bigEndian expectedBigEndian <| sprintf "%A should have correct big endian bytes" value
-
-      let unmarshalledLittle = unmarshall (arrayByteProvider expectedLittleEndian) 0 DBusMessageEndianness.LittleEndian value.Type
-      let unmarshalledBig = unmarshall (arrayByteProvider expectedBigEndian) 0 DBusMessageEndianness.BigEndian value.Type
+      
+      let unmarshalledLittle = unmarshall (ArrayByteProvider(expectedLittleEndian)) 0 DBusMessageEndianness.LittleEndian value.Type
+      let unmarshalledBig = unmarshall (ArrayByteProvider(expectedBigEndian)) 0 DBusMessageEndianness.BigEndian value.Type
       
       match unmarshalledLittle with
       | Error e -> Expect.isOk unmarshalledLittle e
@@ -175,7 +174,7 @@ let tests =
             0x00uy;
       |]
       
-      let unmarshalledMessage = unmarshallMessage (arrayByteProvider expectedBytesLittleEndian)
+      let unmarshalledMessage = unmarshallMessage (ArrayByteProvider(expectedBytesLittleEndian))
       
       match unmarshalledMessage with
       | Error e -> Expect.isOk unmarshalledMessage e
@@ -214,7 +213,7 @@ let tests =
       |]
 
       //let unmarshalledMessage = unmarshallMessage (arrayByteProvider bytesLittleEndian)
-      let unmarshalledMessage = unmarshallMessage (arrayByteProvider expectedBytesLittleEndian)
+      let unmarshalledMessage = unmarshallMessage (ArrayByteProvider(expectedBytesLittleEndian))
       match unmarshalledMessage with
       | Error e -> Expect.isOk unmarshalledMessage e
       | Ok (unmarshalledMessage) -> 
@@ -248,7 +247,7 @@ let tests =
       |]
 
       //let unmarshalledMessage = unmarshallMessage (arrayByteProvider bytesLittleEndian)
-      let unmarshalledMessage = unmarshallMessage (arrayByteProvider expectedBytesLittleEndian)
+      let unmarshalledMessage = unmarshallMessage <| ArrayByteProvider(expectedBytesLittleEndian)
       match unmarshalledMessage with
       | Error e -> Expect.isOk unmarshalledMessage e
       | Ok (unmarshalledMessage) -> 
@@ -292,7 +291,7 @@ let tests =
              |]
 
       //let unmarshalledMessage = unmarshallMessage (arrayByteProvider bytesLittleEndian)
-      let unmarshalledMessage = unmarshallMessage (arrayByteProvider expectedBytesLittleEndian) 
+      let unmarshalledMessage = unmarshallMessage <| ArrayByteProvider(expectedBytesLittleEndian)
       match unmarshalledMessage with
       | Error e -> Expect.isOk unmarshalledMessage e
       | Ok (unmarshalledMessage) -> 

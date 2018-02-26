@@ -8,21 +8,30 @@ open System
 
 module rec Unmarshalling =
 
+    let internal readPadding (byteProvider:IByteProvider) paddingLength =
+        if paddingLength > 0 then 
+            byteProvider.ReadBytes paddingLength |> ignore
+
     let rec unmarshall (byteProvider:IByteProvider) (streamPosition:StreamPosition) (endianness:DBusMessageEndianness) (valueType:DBusType) : Result<DBusValue*StreamPosition, string> =
         let applyEndianness = match System.BitConverter.IsLittleEndian && (endianness<>DBusMessageEndianness.LittleEndian) with
                               | true -> Array.rev
                               | false -> id
 
-        let posAfterPadding = (+) streamPosition << paddingSize streamPosition <| alignment valueType 
+        let preValuePaddingSize = paddingSize streamPosition <| alignment valueType
+        let posAfterPadding = (+) streamPosition preValuePaddingSize
+
+        readPadding byteProvider preValuePaddingSize
 
         match valueType with
         | PrimitiveType p ->
                                 let sizeOfType = byteSize p
                                 let posAfterValue = posAfterPadding + sizeOfType
-                                let bytes = byteProvider.ReadBytes posAfterPadding sizeOfType |> applyEndianness
+
+                                let bytes = byteProvider.ReadBytes sizeOfType |> applyEndianness
 
                                 let stringFromBytesLength (length:int) (constr:string->DBusPrimitiveValue) = 
-                                    let utf8bytes = byteProvider.ReadBytes posAfterValue length
+                                    let utf8bytes = byteProvider.ReadBytes length
+                                    byteProvider.ReadBytes 1 |> ignore // 1 for added nul
                                     let value = fromUtf8Bytes utf8bytes
                                     let dbusvalue = constr value
                                     Ok (dbusvalue, posAfterValue + length + 1) // +1 for added nul
@@ -70,9 +79,12 @@ module rec Unmarshalling =
                                 match dbusLengthValue with
                                 | Primitive (Uint32 lengthValue) -> 
                                                                     let contentLength = (int) lengthValue
-                                                                    let startPosOfContent = (+) posAfterLengthValue (paddingSize posAfterLengthValue <| alignment arrayType )
+                                                                    let paddingS = (paddingSize posAfterLengthValue <| alignment arrayType )
+                                                                    let startPosOfContent = (+) posAfterLengthValue paddingS
+                                                                    readPadding byteProvider paddingS
                                                                     let endPosOfContent = startPosOfContent + contentLength
-                                                                    let contentByteProvider = arrayByteProvider <| byteProvider.ReadBytes startPosOfContent contentLength
+                                                                    let contentBytes = byteProvider.ReadBytes contentLength
+                                                                    let contentByteProvider = ArrayByteProvider contentBytes
                                                                     let rec getArrayValues (acc:Result<DBusValue*StreamPosition, string>) = 
                                                                         acc
                                                                         |> Result.bind (fun (accVal,pos) ->
@@ -201,7 +213,12 @@ module rec Unmarshalling =
         }
 
     let unmarshallMessage (byteProvider:IByteProvider) : Result<DBusMessage,string> =
-        let endiannessByte = byteProvider.ReadBytes 0 1 |> Array.head
+        let rec readEndiannessByte () =
+            match byteProvider.ReadBytes 1 |> Array.head with
+            | 0x00uy -> readEndiannessByte () // reading optional padding between messages
+            | x -> x
+
+        let endiannessByte = readEndiannessByte ()
         
         result {
             let! endianness = unmarshallEndiannessFromByte endiannessByte
@@ -219,7 +236,10 @@ module rec Unmarshalling =
                                     | _ -> None)
                                 |> Array.tryHead
             
-            let startPosBody = posAfterHeader + (paddingSize posAfterHeader 8)
+            let preBodyPaddingSize = (paddingSize posAfterHeader 8)
+            let startPosBody = posAfterHeader + preBodyPaddingSize
+            readPadding byteProvider preBodyPaddingSize
+
             let! body = unmarshallBody byteProvider startPosBody endianness bodySignature
 
             let hasMessageFlag (f:DBusMessageFlags) = messageFlagsByte &&& byte f |> (=) 1uy
