@@ -9,6 +9,7 @@
     <Compile Include="MessageFactory.fs" />
     <Compile Include="Utilities.fs" />
     <Compile Include="MarshallingUtilities.fs" />
+    <Compile Include="ByteProviders.fs" />
     <Compile Include="Marshalling.fs" />
     <Compile Include="Unmarshalling.fs" />
     <None Include="Script.fsx" />

@@ -4,6 +4,8 @@ open Types
 open MessageTypes
 open Utilities
 open MarshallingUtilities
+open ByteProviders
+
 open System
 
 module rec Unmarshalling =

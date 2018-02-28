@@ -5,7 +5,7 @@ open Expecto
 open Busy.MessageFactory
 open Busy.MessageTypes
 open Busy.Types
-open Busy.MarshallingUtilities
+open Busy.ByteProviders
 open Busy.Marshalling
 open Busy.Unmarshalling
 

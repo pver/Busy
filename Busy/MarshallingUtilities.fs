@@ -9,15 +9,6 @@ module MarshallingUtilities =
     type IByteProvider =
        abstract member ReadBytes: int -> byte[]
 
-    type ArrayByteProvider (arr:byte[]) =
-        let mutable currentPos = 0
-
-        interface IByteProvider with
-            member __.ReadBytes length = 
-                let bytes = Array.sub arr currentPos length
-                currentPos <- currentPos + length
-                bytes
-
     let internal nul = [|0x00uy|]
 
     let internal alignment (dbusType:DBusType) =
