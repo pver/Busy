@@ -45,62 +45,55 @@ module Utilities =
                     match chars with
                     | [] -> Error <| sprintf "incomplete container signature found, missing '%c'!" stopChar
                     | head::tail when head=stopChar -> Ok (acc, tail)
-                    | _ ->  match parseSingleType chars with
-                            | Error e -> Error e
-                            | Ok (t, remainder) -> readContainerContent (acc @ t) stopChar remainder
+                    | _ ->  parseSingleType chars
+                            |> Result.bind (fun (t, remainder) -> readContainerContent (acc @ t) stopChar remainder)
 
                 match chars with
                 | [] -> Ok ([],[])
                 | x::xs -> 
                             match x with 
-                            | 'a' -> match parseSingleType xs with
-                                     | Error e -> Error e
-                                     | Ok (t, remainder) -> 
+                            | 'a' -> parseSingleType xs
+                                     |> Result.bind ( fun (t, remainder) -> 
                                                              match t with
                                                              | [] -> Error "empty array signature found!"
                                                              | [single] -> Ok ([ArrayType single], remainder)
                                                              | _ -> Error "multi types found in array signature!"
+                                     )
 
                             | '(' -> 
-                                    match readContainerContent [] ')' xs with
-                                    | Ok (content, remainder) ->
+                                    readContainerContent [] ')' xs
+                                    |> Result.bind ( fun (content, remainder) ->
                                                                     match content with
                                                                     | [] -> Error "empty struct signature found!"
                                                                     | _ -> Ok ([StructType content], remainder)
-                                    | e -> e
+                                    )
                                      
                             | 'v' -> Ok ([VariantType] , xs)
 
                             | '{' -> 
-                                    match readContainerContent [] '}' xs with
-                                    | Error e -> Error e
-                                    | Ok (content, remainder) ->
+                                    readContainerContent [] '}' xs
+                                    |> Result.bind ( fun (content, remainder) ->
                                                                  match content with
                                                                  | [] -> Error "empty dictionary signature found!"
                                                                  | [_] -> Error "incomplete dictionary signature found, only key type specified!"
                                                                  | [PrimitiveType keytype; valuetype] -> Ok ([DictType (keytype, valuetype)], remainder)
                                                                  | _ -> Error "invalid dictionary signature found, exactly one basic key type and one value type are allowed!"
+                                    )
 
-                            | _ ->  let parsePrimitiveTypeChar = parseSignatureChar x
-                                    match parsePrimitiveTypeChar with
-                                    | Ok t -> Ok ([PrimitiveType t] , xs)
-                                    | Error e -> Error e
+                            | _ ->  parseSignatureChar x
+                                    |> Result.map (fun t -> ([PrimitiveType t] , xs))
 
             let rec parser (acc:DBusType list) (chars:char list) =
                 match chars with
                 | [] -> Ok (acc)
-                | _ ->  match parseSingleType chars with
-                        | Error e -> Error e
-                        | Ok (t, remainder) -> parser (acc@t) remainder  
+                | _ ->  parseSingleType chars
+                        |> Result.bind (fun (t, remainder) -> parser (acc@t) remainder)  
 
             let parse = parser []
 
-            let parseResult = s.ToCharArray() 
-                              |> Array.toList
-                              |> parse
-            match parseResult with
-            | Ok (types) -> types |> List.toArray |> Ok
-            | Error e -> Error e
+            s.ToCharArray() 
+            |> Array.toList
+            |> parse
+            |> Result.map (fun types -> types |> List.toArray)
 
         let internal prependError (extendedInfo:string) (r:Result<'a,string>) = r |> Result.mapError (fun x -> sprintf "%s %s" extendedInfo x)
-
