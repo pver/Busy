@@ -8,7 +8,7 @@ module UnixDomainSocket =
     let private addressFamilyBytes = [|0x1uy; 0x0uy|]
     type UnixDomainSocketEndpoint(domainSocket : string) =
         inherit EndPoint()
-        
+
         override __.Serialize () =   let bytes = Array.concat [| addressFamilyBytes ; System.Text.Encoding.ASCII.GetBytes(domainSocket); [|0x0uy;|] |]
                                      let addr = new SocketAddress(AddressFamily.Unix, Array.length bytes)
                                      bytes |> Array.iteri (fun i b -> addr.[i] <- b)
@@ -28,7 +28,10 @@ module UnixDomainSocket =
     // Add client-server and server-client message types as discriminated union type
     // add authentication state machine taking in IConnection
     // add validation and error handling of responses
-    // add IAuthenticator + impl as ExternalAuthenticator (taking IConnection to send/receive CS/SC messages)
+    // add IAuthenticator 
+    //      + impl as ExternalAuthenticator (taking IConnection to send/receive CS/SC messages?)
+    //      + impl as DBusCookieSHA1Authenticator
+    //      + impl as AnonymousAuthenticator
     // Add IConnection + impl as UnixDomainSocketConnection
 
     let private authenticateExternal (socket:Socket) =
@@ -61,6 +64,10 @@ module UnixDomainSocket =
         socket.Send [|0x0uy|] |> ignore // start byte required by dbus daemon as first byte
 
         authenticateExternal socket
+
+// Todo: call org.freedesktop.DBus.Hello
+// object path = /org/freedesktop/DBus
+// 
 
         socket
     
