@@ -2,7 +2,6 @@ module MarshallingTests
 
 open Expecto
 
-open Busy.MessageFactory
 open Busy.MessageTypes
 open Busy.Types
 open Busy.ByteProviders
@@ -142,7 +141,7 @@ let tests =
     testCase "signal 'owner changed' marshalling should result in correct byte representation" <| fun _ ->
 
       let messageBody = [|(Primitive <| String ":1.1")|]
-      let expectedMessage = createSignal 2ul "/org/freedesktop/DBus" "org.freedesktop.DBus" "NameAcquired" messageBody (Some "org.freedesktop.DBus") (Some ":1.1")
+      let expectedMessage = Busy.MessageFactory.CreateSignal 2ul "/org/freedesktop/DBus" "org.freedesktop.DBus" "NameAcquired" messageBody (Some "org.freedesktop.DBus") (Some ":1.1")
                             |> sortMessageHeaderFields
       
       // use filewriter = new BinaryWriter(File.Open("testfile.bin", FileMode.Create))
@@ -186,7 +185,7 @@ let tests =
 
     testCase "method call 'list names' marshalling should result in correct byte representation" <| fun _ ->
       let messageBody = [||]
-      let expectedMessage = createMethodCall 2ul "/org/freedesktop/DBus" (Some "org.freedesktop.DBus") "ListNames" messageBody (Some ":1.8") (Some "org.freedesktop.DBus") 
+      let expectedMessage = Busy.MessageFactory.CreateMethodCall 2ul "/org/freedesktop/DBus" (Some "org.freedesktop.DBus") "ListNames" messageBody (Some ":1.8") (Some "org.freedesktop.DBus") 
                             |> sortMessageHeaderFields
 
       // bytes as sent by the daemon when aqcuiring name
@@ -224,7 +223,7 @@ let tests =
     testCase "method return 'list names' marshalling should result in correct byte representation" <| fun _ ->
       let messageBody = [|Array (PrimitiveType StringType,
                            [|Primitive (String "org.freedesktop.DBus"); Primitive (String ":1.8")|])|];
-      let expectedMessage = createMethodReturn 3ul 2ul messageBody (Some "org.freedesktop.DBus") (Some ":1.8")
+      let expectedMessage = Busy.MessageFactory.CreateMethodReturn 3ul 2ul messageBody (Some "org.freedesktop.DBus") (Some ":1.8")
                             |> sortMessageHeaderFields
       // bytes as sent by the daemon when aqcuiring name
       let expectedBytesLittleEndian = [|
@@ -257,7 +256,7 @@ let tests =
 
     testCase "method error 'list names' marshalling should result in correct byte representation" <| fun _ ->
       let messageBody = [|Primitive (String "org.freedesktop.DBus does not understand message ListName")|];
-      let expectedMessage = createError 3ul 2ul "org.freedesktop.DBus.Error.UnknownMethod" messageBody (Some "org.freedesktop.DBus") (Some ":1.6")
+      let expectedMessage = Busy.MessageFactory.CreateError 3ul 2ul "org.freedesktop.DBus.Error.UnknownMethod" messageBody (Some "org.freedesktop.DBus") (Some ":1.6")
                             |> sortMessageHeaderFields
 
       
