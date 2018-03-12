@@ -4,7 +4,7 @@ open Types
 open MessageTypes
 open Utilities
 open MarshallingUtilities
-open ByteProviders
+open Busy.ByteProviders
 
 open System
 
