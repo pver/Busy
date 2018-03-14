@@ -5,6 +5,7 @@
 #r "./packages/FAKE/tools/FakeLib.dll"
 
 open Fake
+open Fake.Testing.Expecto
 open System
 
 // --------------------------------------------------------------------------------------
@@ -13,6 +14,7 @@ open System
 
 let buildDir  = "./build/"
 let appReferences = !! "/**/*.fsproj"
+let testExecutables = !! "/**/bin/**/*Tests*.exe"
 let dotnetcliVersion = "2.0.2"
 let mutable dotnetExePath = "dotnet"
 
@@ -67,6 +69,16 @@ Target "Build" (fun _ ->
     )
 )
 
+Target "RunTests" (fun _ ->
+    testExecutables
+    |> Expecto id //(fun p -> { p with Parallel = false } )
+)
+
+// --------------------------------------------------------------------------------------
+// Run all targets by default. Invoke 'build <Target>' to override
+
+Target "All" DoNothing
+
 // --------------------------------------------------------------------------------------
 // Build order
 // --------------------------------------------------------------------------------------
@@ -75,5 +87,7 @@ Target "Build" (fun _ ->
   ==> "InstallDotNetCLI"
   ==> "Restore"
   ==> "Build"
+  ==> "RunTests"
+  ==> "All"
 
-RunTargetOrDefault "Build"
+RunTargetOrDefault "All"
