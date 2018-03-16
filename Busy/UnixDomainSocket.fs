@@ -25,59 +25,55 @@ module UnixDomainSocket =
 
     let private newline = [|13uy;10uy|]
     let private formatCommand (cmd:string) = Array.append (System.Text.Encoding.ASCII.GetBytes(cmd)) newline
+    let private sendCommand (socket:Socket) cmd = formatCommand cmd |> socket.Send |> ignore
 
     // Todo: 
     // Add client-server and server-client message types as discriminated union type
     // add authentication state machine taking in IConnection
     // add validation and error handling of responses
-    // add IAuthenticator 
-    //      + impl as ExternalAuthenticator (taking IConnection to send/receive CS/SC messages?)
-    //      + impl as DBusCookieSHA1Authenticator
-    //      + impl as AnonymousAuthenticator
+    // Implement IAuthenticator 
+    //      => impl as DBusCookieSHA1Authenticator
+    //      => impl as AnonymousAuthenticator
     // Add IConnection + impl as UnixDomainSocketConnection
 
-    let private authenticateExternal (socket:Socket) =
-        // Encode the data string into a byte array.  => 30 is hex for user id 0 (=root) TODO: replace with actual user id (platform specific!)
-        
-        let authenticator = new ExternalDBusAuthenticator("30") :> IDBusAauthenticator
-        
-        let rec checkStateTillComplete state =
+    let private authenticate (socket:Socket) (authenticator:IDBusAauthenticator) =
+      
+        let rec checkStateTillCompleted state =
             match state with
             | AwaitsInput cmd -> 
-                    formatCommand cmd |> socket.Send |> ignore
+                    sendCommand socket cmd
                     
-                    // Receive the response from the remote device.  
                     let bytes = Array.init 1024 (fun _ -> 0uy)
                     let bytesRec = socket.Receive(bytes);
-                    let authResponse = System.Text.Encoding.ASCII.GetString(bytes, 0, bytesRec);
-                    printfn "received: %s" authResponse
 
-                    checkStateTillComplete <| authenticator.ProcessInput authResponse
+                    System.Text.Encoding.ASCII.GetString(bytes, 0, bytesRec)
+                    |> authenticator.ProcessInput
+                    |> checkStateTillCompleted
             | Completed cmp ->  cmp
         
-        let finalState = checkStateTillComplete <| authenticator.Start() 
-        match finalState with
-        | Error msg ->  failwith msg
-        | Ok authId -> 
-                    printfn "Authentication id was: %s" authId
-                    let beginCmd = formatCommand "BEGIN"
-                    socket.Send beginCmd |> ignore
+        let completedState = checkStateTillCompleted <| authenticator.Start() 
+        match completedState with
+        | Error msg -> failwith msg
+        | Ok _ -> sendCommand socket "BEGIN"
 
     // Todo: 
     // Return IConnection here
     let connect (addr:string) =
+  
         let socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP)
         let endpoint = new UnixDomainSocketEndpoint(addr)
 
         socket.Connect endpoint
-
         socket.Send [|0x0uy|] |> ignore // start byte required by dbus daemon as first byte
 
-        authenticateExternal socket
+        // Todo: 
+        // -> separate authentication from connect
+        // -> go through all types of authenticators here (inject them? or fixed list of supported authenticators?)
+        // -> Encode the data string into a byte array.  => 30 is hex for user id 0 (=root) TODO: replace with actual user id (platform specific!)
+        new ExternalDBusAuthenticator("30") |> authenticate socket
 
-// Todo: call org.freedesktop.DBus.Hello
-// object path = /org/freedesktop/DBus
-// 
+        // Todo: call org.freedesktop.DBus.Hello, but not here in connect + optional, because not every dbus session types requires this 
+        // object path = /org/freedesktop/DBus
 
         socket
     
