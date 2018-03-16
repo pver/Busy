@@ -3,6 +3,8 @@ namespace Busy
 open System.Net
 open System.Net.Sockets
 
+open Busy.Authentication
+
 module UnixDomainSocket =
 
     let private addressFamilyBytes = [|0x1uy; 0x0uy|]
@@ -36,20 +38,28 @@ module UnixDomainSocket =
 
     let private authenticateExternal (socket:Socket) =
         // Encode the data string into a byte array.  => 30 is hex for user id 0 (=root) TODO: replace with actual user id (platform specific!)
-        let msg = formatCommand "AUTH EXTERNAL 30"
         
-        // Send the data through the socket.  
-        socket.Send msg |> ignore
+        let authenticator = new ExternalDBusAuthenticator("30") :> IDBusAauthenticator
         
-        // Receive the response from the remote device.  
-        let bytes = Array.init 1024 (fun _ -> 0uy)
-        let bytesRec = socket.Receive(bytes);
-        let authResponse = System.Text.Encoding.ASCII.GetString(bytes, 0, bytesRec);
-        printfn "received: %s" authResponse
+        let rec checkStateTillComplete state =
+            match state with
+            | AwaitsInput cmd -> 
+                    formatCommand cmd |> socket.Send |> ignore
+                    
+                    // Receive the response from the remote device.  
+                    let bytes = Array.init 1024 (fun _ -> 0uy)
+                    let bytesRec = socket.Receive(bytes);
+                    let authResponse = System.Text.Encoding.ASCII.GetString(bytes, 0, bytesRec);
+                    printfn "received: %s" authResponse
+
+                    checkStateTillComplete <| authenticator.ProcessInput authResponse
+            | Completed cmp ->  cmp
         
-        match authResponse.StartsWith("OK") with
-        | false ->  failwith "Unexpected error received"
-        | true -> 
+        let finalState = checkStateTillComplete <| authenticator.Start() 
+        match finalState with
+        | Error msg ->  failwith msg
+        | Ok authId -> 
+                    printfn "Authentication id was: %s" authId
                     let beginCmd = formatCommand "BEGIN"
                     socket.Send beginCmd |> ignore
 
