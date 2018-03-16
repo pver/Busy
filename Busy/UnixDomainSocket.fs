@@ -7,7 +7,7 @@ open Busy.Authentication
 
 module UnixDomainSocket =
 
-    let private addressFamilyBytes = [|0x1uy; 0x0uy|]
+    let private addressFamilyBytes = [|0x1uy; 0x0uy|] // AddressFamily.Unix=1
     type UnixDomainSocketEndpoint(domainSocket : string) =
         inherit EndPoint()
 
