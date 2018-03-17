@@ -14,7 +14,6 @@
     <Compile Include="Unmarshalling.fs" />
     <Compile Include="Authentication.fs" />
     <Compile Include="UnixDomainSocket.fs" />
-    <None Include="Script.fsx" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>
