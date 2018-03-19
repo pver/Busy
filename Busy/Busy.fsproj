@@ -13,6 +13,7 @@
     <Compile Include="Marshalling.fs" />
     <Compile Include="Unmarshalling.fs" />
     <Compile Include="Authentication.fs" />
+    <Compile Include="Address.fs" />
     <Compile Include="UnixDomainSocket.fs" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />

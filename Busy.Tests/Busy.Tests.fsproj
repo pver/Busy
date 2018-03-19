@@ -12,6 +12,7 @@
     <Compile Include="Tests.fs" />
     <Compile Include="MarshallingTests.fs" />
     <Compile Include="AuthenticationTests.fs" />
+    <Compile Include="AddressTests.fs" />
     <Compile Include="Main.fs" />
     <None Include="App.config" />
   </ItemGroup>
