@@ -14,7 +14,7 @@ open System
 
 let buildDir  = "./build/"
 let appReferences = !! "/**/*.fsproj"
-let testExecutables = !! "/**/bin/**/*Tests*.exe"
+let testExecutables = !! "/**/bin/**/*Tests*.dll"
 let dotnetcliVersion = "2.0.6"
 let mutable dotnetExePath = "dotnet"
 
@@ -71,7 +71,10 @@ Target "Build" (fun _ ->
 
 Target "RunTests" (fun _ ->
     testExecutables
-    |> Expecto id //(fun p -> { p with Parallel = false } )
+    |> Seq.iter (fun p ->
+        let dir = System.IO.Path.GetDirectoryName p
+        runDotnet dir <| sprintf "exec %s" p
+    )
 )
 
 // --------------------------------------------------------------------------------------
