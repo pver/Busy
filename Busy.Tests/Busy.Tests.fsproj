@@ -16,5 +16,8 @@
     <Compile Include="Main.fs" />
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <DotNetCliToolReference Include="MiniCover" Version="2.0.0-ci-20180321193925" />
+  </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>
