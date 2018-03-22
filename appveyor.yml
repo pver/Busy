@@ -2,5 +2,16 @@ image:
   - Visual Studio 2015
   - Visual Studio 2017
 
+install:
+  - ps: choco install codecov
+
 build_script:
   - cmd: build.cmd
+
+test_script:
+  - cmd: runCodeCoverage.cmd
+  - cmd: copy .\codeCoverage\opencovercoverage.xml .\opencovercoverage.xml
+      # Upload coverage results to codecov.io
+  - ps: $env:PATH = 'C:\msys64\usr\bin;' + $env:PATH
+  - ps: Invoke-WebRequest -Uri 'https://codecov.io/bash' -OutFile codecov.sh
+  - ps: bash codecov.sh -f "opencovercoverage.xml"  
