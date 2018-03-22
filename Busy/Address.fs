@@ -34,7 +34,7 @@ module Address =
 
         match splitPrefixFromProperties saveAddress with
         | [|prefix ; settings|] when prefix <> "" -> 
-            let properties = settings.Split([|','|])
+            let properties = settings.Trim([|','|]).Split([|','|])
                              |> Array.map (splitPropertyKeyFromValue >> (fun x -> 
                                 match x with
                                 | [|k; p|] when k.Trim() <> "" -> Some <| (k.Trim(),p) // TODO: unescape property parts here
@@ -54,7 +54,7 @@ module Address =
         match System.String.IsNullOrWhiteSpace(address) with 
         | true -> InvalidAddress address 
         | false -> 
-            let saveAddress = address.Trim()
+            let saveAddress = address.Trim().Trim([|';'|])
             let addresses = saveAddress.Split([|';'|]) |> Array.map parseSingleAddress
 
             match addresses with

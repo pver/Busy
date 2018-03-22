@@ -23,7 +23,6 @@ let InvalidAddressTests =
 
         createInvalidAddressTestCase "Missing property key formatted address is marked invalid" "unix:=/var/test"
         createInvalidAddressTestCase "Missing '=' after property key formatted address is marked invalid" "unix:path"
-        createInvalidAddressTestCase "Extra ',' after property formatted address is marked invalid" "unix:path=/tmp/dbus-test,"
         createInvalidAddressTestCase "Duplicate property formatted address is marked invalid" "unix:path=abc,path=bcd"
     ]
 
@@ -32,6 +31,53 @@ let createUnsupportedAddressTestCase name unsupportedValue =
           let subject = ParseAddress unsupportedValue
           let expected = UnsupportedAddress unsupportedValue
           Expect.equal subject expected name
+
+[<Tests>]
+let GeneralAddressFormatTests =
+    testList "GeneralAddressFormat" [
+        testCase "Trailing address property ',' is ignored" <| fun _ ->
+          let subject = ParseAddress "unix:path=/tmp/dbus-test,"
+          let expected = ValidAddress << UnixDomainSocketAddress << Map.ofSeq <| [("path","/tmp/dbus-test")]
+          Expect.equal subject expected "Trailing address property ',' is ignored"
+        
+        testCase "Leading address property ',' is ignored" <| fun _ ->
+          let subject = ParseAddress "unix:,path=/tmp/dbus-test"
+          let expected = ValidAddress << UnixDomainSocketAddress << Map.ofSeq <| [("path","/tmp/dbus-test")]
+          Expect.equal subject expected "Leading address property ',' is ignored"
+
+        testCase "Leading and trailing address property ',' is ignored" <| fun _ ->
+          let subject = ParseAddress "unix:,path=/tmp/dbus-test,"
+          let expected = ValidAddress << UnixDomainSocketAddress << Map.ofSeq <| [("path","/tmp/dbus-test")]
+          Expect.equal subject expected "Leading and trailing address property ',' is ignored"
+
+        testCase "Multiple addresses are parsed correctly" <| fun _ ->
+          let subject = ParseAddress "unix:path=/abc;tcp:host=127.0.0.1,port=4242"
+          let addr1 = ValidAddress << UnixDomainSocketAddress << Map.ofSeq <| [("path","/abc")]
+          let addr2 = ValidAddress << TcpSocketAddress  << Map.ofSeq <| [ ("host","127.0.0.1"); ("port","4242")]
+          let expected = ParseAddressResults <| [|addr1; addr2|]
+          Expect.equal subject expected "Multiple addresses are parsed correctly"
+
+        testCase "Multiple addresses leading ';' is ignored" <| fun _ ->
+          let subject = ParseAddress ";unix:path=/abc;tcp:host=127.0.0.1,port=4242"
+          let addr1 = ValidAddress << UnixDomainSocketAddress << Map.ofSeq <| [("path","/abc")]
+          let addr2 = ValidAddress << TcpSocketAddress  << Map.ofSeq <| [ ("host","127.0.0.1"); ("port","4242")]
+          let expected = ParseAddressResults <| [|addr1; addr2|]
+          Expect.equal subject expected "Multiple addresses leading ';' is ignored"
+
+        testCase "Multiple addresses trailing ';' is ignored" <| fun _ ->
+          let subject = ParseAddress "unix:path=/abc;tcp:host=127.0.0.1,port=4242;"
+          let addr1 = ValidAddress << UnixDomainSocketAddress << Map.ofSeq <| [("path","/abc")]
+          let addr2 = ValidAddress << TcpSocketAddress  << Map.ofSeq <| [ ("host","127.0.0.1"); ("port","4242")]
+          let expected = ParseAddressResults <| [|addr1; addr2|]
+          Expect.equal subject expected "Multiple addresses trailing ';' is ignored"
+
+        testCase "Multiple addresses leading and trailing ';' is ignored" <| fun _ ->
+          let subject = ParseAddress ";unix:path=/abc;tcp:host=127.0.0.1,port=4242;"
+          let addr1 = ValidAddress << UnixDomainSocketAddress << Map.ofSeq <| [("path","/abc")]
+          let addr2 = ValidAddress << TcpSocketAddress  << Map.ofSeq <| [ ("host","127.0.0.1"); ("port","4242")]
+          let expected = ParseAddressResults <| [|addr1; addr2|]
+          Expect.equal subject expected "Multiple addresses leading and trailing ';' is ignored"
+    ]
 
 [<Tests>]
 let UnsupportedAddressTests =
