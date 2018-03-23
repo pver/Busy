@@ -4,6 +4,7 @@
     <TargetFrameworks>net461;netstandard2.0;netcoreapp2.0</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="DBusTypes.fs" />
     <Compile Include="MessageTypes.fs" />
     <Compile Include="MessageFactory.fs" />

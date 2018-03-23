@@ -5,6 +5,7 @@
 #r "./packages/FAKE/tools/FakeLib.dll"
 
 open Fake
+open Fake.AssemblyInfoFile
 open Fake.Testing.Expecto
 open System
 
@@ -75,6 +76,12 @@ Target "RunTests" (fun _ ->
         let dir = System.IO.Path.GetDirectoryName p
         runDotnet dir <| sprintf "exec %s" p
     )
+)
+
+Target "WriteAssemblyInfo" (fun _ ->
+    CreateFSharpAssemblyInfo "./Busy/AssemblyInfo.fs"
+      [ 
+        Attribute.InternalsVisibleTo "Busy.Tests"]
 )
 
 // --------------------------------------------------------------------------------------
