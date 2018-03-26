@@ -102,3 +102,20 @@ let TcpSocketAddressTests =
           let expected = ValidAddress << TcpSocketAddress  << Map.ofSeq <| [ ("host","127.0.0.1"); ("port","4242")]
           Expect.equal subject expected "Host+port address is parsed correctly"
     ]
+
+[<Tests>]
+let AddressTests =
+    testList "FilterValidAddressTests" [
+        testCase "Filter valid address keeps all valid addresses" <| fun _ ->
+          let addr1 = UnixDomainSocketAddress << Map.ofSeq <| [("path","/abc")]
+          let addr2 = "my_invalid_address"
+          let addr3 = TcpSocketAddress << Map.ofSeq <| [ ("host","127.0.0.1"); ("port","4242")]
+          let addr1ParseResult = ValidAddress addr1
+          let addr2ParseResult = InvalidAddress addr2
+          let addr3ParseResult = ValidAddress addr3
+          let parseResults = ParseAddressResults <| [|addr1ParseResult; addr2ParseResult; addr3ParseResult|]
+
+          let validAddresses = filterValidAddresses parseResults
+          let expected = [|addr1; addr3|]
+          Expect.equal validAddresses expected "Only valid addresses left"
+    ] 

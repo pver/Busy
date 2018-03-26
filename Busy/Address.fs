@@ -19,6 +19,11 @@ module Address =
         | InvalidAddress of string // malformed in any way
         | UnsupportedAddress of UnsupportedAddress // correctly formed, but unknown or unsupported transporttype
         
+    let rec internal filterValidAddresses (parseResult:ParseAddressResult) =
+        match parseResult with
+        | ValidAddress v -> [|v|]
+        | ParseAddressResults innerResults -> innerResults  |> Array.collect filterValidAddresses
+        | InvalidAddress _ | UnsupportedAddress _ -> Array.empty
 
     let rec private parseSingleAddress (address:string) =
         let saveAddress = if System.String.IsNullOrEmpty(address) then "" else address.Trim()
