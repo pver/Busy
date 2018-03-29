@@ -6,8 +6,10 @@ module Address =
 
     type UnsupportedAddress = string
 
+    type UnixDomainSocketAddress = AddressProperties
+
     type DBusAddress =
-        | UnixDomainSocketAddress of AddressProperties
+        | UnixDomainSocketAddress of UnixDomainSocketAddress
         | LaunchdAddress of AddressProperties
         | TcpSocketAddress of AddressProperties
         | NonceTcpSocketAddress of AddressProperties

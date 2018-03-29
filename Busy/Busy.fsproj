@@ -13,9 +13,11 @@
     <Compile Include="ByteProviders.fs" />
     <Compile Include="Marshalling.fs" />
     <Compile Include="Unmarshalling.fs" />
-    <Compile Include="Authentication.fs" />
     <Compile Include="Address.fs" />
     <Compile Include="UnixDomainSocket.fs" />
+    <Compile Include="Transport.fs" />
+    <Compile Include="Authentication.fs" />
+    <Compile Include="Authenticator.fs" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>

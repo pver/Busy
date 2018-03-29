@@ -42,4 +42,4 @@ namespace Busy.Authentication
                                 Completed(error) 
                     | true ->   let authenticationId = input.Substring(3, input.Length - 3 ).Trim()
                                 Completed(Ok(authenticationId))
-    
+ 
