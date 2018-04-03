@@ -5,4 +5,5 @@ nuget Expecto
 nuget FAKE
 nuget FSharp.Core
 
-nuget MiniCover framework: >= netcoreapp2.0
+nuget AltCover framework: >= netcoreapp2.0
+nuget ReportGenerator
