@@ -37,20 +37,35 @@ module Authenticator =
             | Completed cmp ->  cmp
         
         let completedState = checkStateTillCompleted <| authenticator.Start() 
-        match completedState with
-        | Error msg -> failwith msg
-        | Ok _ -> sendCommand stream "BEGIN"
+        completedState
+
+    // all types of authenticators here (TODO: inject them? or limit to this fixed list of supported authenticators?)
+    let private supportedAuthenticators() = 
+        [
+            new ExternalDBusAuthenticator("30") // 30 is hex for user id 0 (=root) TODO: replace with actual user id (platform specific!)
+        ] |> List.map (fun x-> x :> IDBusAauthenticator)
 
     // Todo: 
     // Return IConnection here
     let Authenticate (transport:ITransport) =
         let stream = transport.Connect()
 
-        // Todo: 
-        // -> go through all types of authenticators here (inject them? or fixed list of supported authenticators?)
-        // -> Encode the data string into a byte array.  => 30 is hex for user id 0 (=root) TODO: replace with actual user id (platform specific!)
-        new ExternalDBusAuthenticator("30") 
-        |> authenticateWithAuthenticator stream
+        let rec authenticate (authenticators:IDBusAauthenticator list) = 
+            match authenticators with
+            | [] -> Error "No authenticator could authenticate succesfully with the server"
+            | head::tail -> match authenticateWithAuthenticator stream head with
+                            | Ok o -> Ok o
+                            | Error _ -> authenticate tail
+
+        let authenticationResult = authenticate <| supportedAuthenticators()
+
+        // Todo: add support for Unix FD negotiation here, that should go before the BEGIN call
+
+        match authenticationResult with
+        | Error _ -> authenticationResult
+        | Ok _ -> 
+            sendCommand stream "BEGIN"
+            authenticationResult
 
         // Todo: call org.freedesktop.DBus.Hello, but higher up in the API, not here in connect + do this optional (BusSession type?), 
         // because not every dbus session types requires this 

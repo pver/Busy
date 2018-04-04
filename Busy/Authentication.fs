@@ -19,7 +19,7 @@ namespace Busy.Authentication
     type AuthenticationFailed = string
 
     type AuthenticationState =
-        | AwaitsInput of string
+        | AwaitsInput of string  // used to send request to server during authentication + could be used for NEGOTIATE_UNIX_FD negotiation in the future (TODO)
         | Completed of Result<AuthenticationId, AuthenticationFailed>
 
     type IDBusAauthenticator =
