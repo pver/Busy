@@ -23,4 +23,16 @@ let tests =
       let subject = authenticator.ProcessInput("OK f4b06a6402fb063245569782591172af")
       let expectedSubject = Completed <| Ok ("f4b06a6402fb063245569782591172af")
       Expect.equal subject expectedSubject "External authenticator should parse OK correctly"
+
+    testCase "Authenticator should fail on REJECTED correctly" <| fun _ ->
+      let authenticator = createExternalAuthenticator()
+      let subject = authenticator.ProcessInput("REJECTED KERBEROS_V4 SKEY")
+      let expectedSubject = Completed <| Error ("REJECTED KERBEROS_V4 SKEY")
+      Expect.equal subject expectedSubject "External authenticator should fail on REJECTED correctly"
+      
+    testCase "Authenticator should fail on ERROR correctly" <| fun _ ->
+      let authenticator = createExternalAuthenticator()
+      let subject = authenticator.ProcessInput("ERROR some error message")
+      let expectedSubject = Completed <| Error ("ERROR some error message")
+      Expect.equal subject expectedSubject "External authenticator should fail on ERROR correctly"
   ]

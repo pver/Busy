@@ -34,7 +34,7 @@ module Address =
             match prefix with
             | "tcp" -> properties |> TcpSocketAddress |> ValidAddress
             | "unix" -> properties |> UnixDomainSocketAddress |> ValidAddress
-            | _ -> UnsupportedAddress saveAddress
+            | _ -> UnsupportedAddress address
 
         let splitPrefixFromProperties (x:string) = x.Split([|':'|])
         let splitPropertyKeyFromValue (x:string) = x.Split([|'='|])
@@ -58,10 +58,10 @@ module Address =
         | _ -> InvalidAddress address
 
     let ParseAddress (address:string) =
-        match System.String.IsNullOrWhiteSpace(address) with 
+        match isNull address with 
         | true -> InvalidAddress address 
         | false -> 
-            let saveAddress = address.Trim().Trim([|';'|])
+            let saveAddress = address.Trim([|';'|])
             let addresses = saveAddress.Split([|';'|]) |> Array.map parseSingleAddress
 
             match addresses with

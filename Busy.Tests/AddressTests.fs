@@ -110,10 +110,12 @@ let AddressTests =
           let addr1 = UnixDomainSocketAddress << Map.ofSeq <| [("path","/abc")]
           let addr2 = "my_invalid_address"
           let addr3 = TcpSocketAddress << Map.ofSeq <| [ ("host","127.0.0.1"); ("port","4242")]
+          let addr4 = "my_unsupported_address"
           let addr1ParseResult = ValidAddress addr1
           let addr2ParseResult = InvalidAddress addr2
           let addr3ParseResult = ValidAddress addr3
-          let parseResults = ParseAddressResults <| [|addr1ParseResult; addr2ParseResult; addr3ParseResult|]
+          let addr4ParseResult = UnsupportedAddress addr4
+          let parseResults = ParseAddressResults <| [|addr1ParseResult; addr2ParseResult; addr3ParseResult; addr4ParseResult|]
 
           let validAddresses = filterValidAddresses parseResults
           let expected = [|addr1; addr3|]

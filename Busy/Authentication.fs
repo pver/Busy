@@ -38,7 +38,7 @@ namespace Busy.Authentication
                 nextState
             member __.ProcessInput input = 
                 match input.StartsWith("OK ") with
-                    | false ->  let error = Error <| sprintf "Unexpected error received: %s" input
+                    | false ->  let error = Error input
                                 Completed(error) 
                     | true ->   let authenticationId = input.Substring(3, input.Length - 3 ).Trim()
                                 Completed(Ok(authenticationId))
