@@ -32,8 +32,6 @@ module Authenticator =
                     let bytesRec = stream.Read(bytes, 0, bytes.Length);
 
                     System.Text.Encoding.ASCII.GetString(bytes, 0, bytesRec)
-                    |> (fun x -> printf "Got %s" x
-                                 x )
                     |> authenticator.ProcessInput
                     |> checkStateTillCompleted
             | Completed cmp ->  cmp

@@ -9,6 +9,7 @@ module Transport =
 
     type ITransport =
        abstract member Connect: unit -> Stream
+       abstract member IsConnected: bool with get
        abstract member Close: unit -> unit
 
     type UnixDomainSocketTransport (address:UnixDomainSocketAddress) =
@@ -37,6 +38,8 @@ module Transport =
                 match stream with
                 | Some s -> s.Close()
                 | None -> ()
+
+            member __.IsConnected with get() = Option.isSome stream
 
     let FromAddress (address:DBusAddress) : ITransport =
         match address with
