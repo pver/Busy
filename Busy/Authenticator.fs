@@ -26,11 +26,9 @@ module Authenticator =
             | AwaitsInput cmd -> 
                     sendCommand transport cmd
                     
-                    let stream = transport.Connect() // Todo: should use byteprovider here!!
-                    let bytes = Array.init 1024 (fun _ -> 0uy)
-                    let bytesRec = stream.Read(bytes, 0, bytes.Length);
+                    let bytesRec = transport.ReadBytes 1024;
 
-                    System.Text.Encoding.ASCII.GetString(bytes, 0, bytesRec)
+                    System.Text.Encoding.ASCII.GetString(bytesRec, 0, Array.length bytesRec)
                     |> authenticator.ProcessInput
                     |> checkStateTillCompleted
             | Completed cmp ->  cmp
