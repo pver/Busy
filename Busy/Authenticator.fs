@@ -5,7 +5,7 @@ open Transport
 module Authenticator =
 
     let private newline = [|13uy;10uy|]
-    let private formatCommand (cmd:string) = Array.append (System.Text.Encoding.ASCII.GetBytes(cmd)) newline
+    let internal formatCommand (cmd:string) = Array.append (System.Text.Encoding.ASCII.GetBytes(cmd)) newline
     let private sendCommand (transport:ITransport) cmd = 
         printfn "Writing %s" cmd
         transport.Write <| formatCommand cmd 
