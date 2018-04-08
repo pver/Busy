@@ -52,6 +52,28 @@ let tests =
       let value = Primitive (Int32 1000)
       testValueMarshalling value [|0xE8uy; 0x03uy; 0x00uy; 0x00uy|] [|0x00uy; 0x00uy; 0x03uy; 0xE8uy|]
 
+    testCase "int64 '1000' is marshalled to correct byte representations" <| fun _ ->
+      let value = Primitive (Int64 1000L)
+      testValueMarshalling value [|0xE8uy; 0x03uy; 0x00uy; 0x00uy; 0x00uy; 0x00uy; 0x00uy; 0x00uy|] [|0x00uy; 0x00uy; 0x00uy; 0x00uy; 0x00uy; 0x00uy; 0x03uy; 0xE8uy|]
+
+    testCase "double '1000' is marshalled to correct byte representations" <| fun _ ->
+      let value = Primitive (Double 1000.)
+      testValueMarshalling value [|0uy; 0uy; 0uy; 0uy; 0uy; 64uy; 143uy; 64uy|] [|64uy; 143uy; 64uy; 0uy; 0uy; 0uy; 0uy; 0uy|]
+
+
+    testCase "uint16 '1000' is marshalled to correct byte representations" <| fun _ ->
+      let value = Primitive (Uint16 1000us)
+      testValueMarshalling value [|0xE8uy; 0x03uy;|] [|0x03uy; 0xE8uy|]
+
+    testCase "uint32 '1000' is marshalled to correct byte representations" <| fun _ ->
+      let value = Primitive (Uint32 1000u)
+      testValueMarshalling value [|0xE8uy; 0x03uy; 0x00uy; 0x00uy|] [|0x00uy; 0x00uy; 0x03uy; 0xE8uy|]
+
+    testCase "uint64 '1000' is marshalled to correct byte representations" <| fun _ ->
+      let value = Primitive (Uint64 1000UL)
+      testValueMarshalling value [|0xE8uy; 0x03uy; 0x00uy; 0x00uy; 0x00uy; 0x00uy; 0x00uy; 0x00uy|] [|0x00uy; 0x00uy; 0x00uy; 0x00uy; 0x00uy; 0x00uy; 0x03uy; 0xE8uy|]
+
+
     testCase "Struct (int32 '1000';bool 'true') is marshalled to correct byte representations" <| fun _ ->
       let value = Struct [|Primitive (Int32 1000); Primitive (Boolean (true))|]
       testValueMarshalling value [|0xE8uy; 0x03uy; 0x00uy; 0x00uy;  // 1000

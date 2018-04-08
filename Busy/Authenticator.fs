@@ -6,9 +6,7 @@ module Authenticator =
 
     let private newline = [|13uy;10uy|]
     let internal formatCommand (cmd:string) = Array.append (System.Text.Encoding.ASCII.GetBytes(cmd)) newline
-    let private sendCommand (transport:ITransport) cmd = 
-        printfn "Writing %s" cmd
-        transport.Write <| formatCommand cmd 
+    let private sendCommand (transport:ITransport) cmd = transport.Write <| formatCommand cmd 
 
     // Todo: 
     // Add client-server and server-client message types as discriminated union type
