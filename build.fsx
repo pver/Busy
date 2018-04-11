@@ -6,7 +6,6 @@
 
 open Fake
 open Fake.AssemblyInfoFile
-open Fake.Testing.Expecto
 open System
 
 // --------------------------------------------------------------------------------------
