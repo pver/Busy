@@ -55,14 +55,20 @@ module Transport =
             member __.Write bytes = write bytes
             member __.ReadBytes length = read length
 
-    let FromAddress (address:DBusAddress) : ITransport =
-        let transport = 
-            match address with
-            | UnixDomainSocketAddress unixDomainSocketAddress -> UnixDomainSocketTransport unixDomainSocketAddress :> ITransport
-            | LaunchdAddress _ 
-            | TcpSocketAddress _ 
-            | NonceTcpSocketAddress _ 
-            | UnixExecutedSubProcessAddress _ -> failwith <| sprintf "Transport for address %A not implemented yet" address
-        
-        transport.Write [|0x0uy|] // start byte required by dbus daemon as first byte before any other bytes sent
-        transport
+    let FromAddress (address:DBusAddress) =
+        try
+            let transport = 
+                match address with
+                | UnixDomainSocketAddress unixDomainSocketAddress -> Ok (UnixDomainSocketTransport unixDomainSocketAddress :> ITransport)
+                | LaunchdAddress _ 
+                | TcpSocketAddress _ 
+                | NonceTcpSocketAddress _ 
+                | UnixExecutedSubProcessAddress _ -> Error (sprintf "Transport for address %A not implemented yet" address)
+
+            match transport with
+            | Ok (validTransport) -> validTransport.Write [|0x0uy|] // start byte required by dbus daemon as first byte before any other bytes sent
+            | _ -> ()
+
+            transport
+        with
+        | ex -> Error (ex.Message)
