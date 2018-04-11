@@ -24,7 +24,7 @@ module Marshalling =
                                  | DBusPrimitiveValue.Invalid | Reserved -> [||]
                                  | Int32 i ->  System.BitConverter.GetBytes(i) |> applyEndianness
 
-                                 | String s -> let utfBytes = System.Text.Encoding.UTF8.GetBytes(s)
+                                 | String s -> let utfBytes = toUtf8Bytes s
                                                let stringBytes = Array.append utfBytes nul
                                                let stringLength = Array.length utfBytes |> uint32
                                                
@@ -40,7 +40,7 @@ module Marshalling =
                                  | Double i -> System.BitConverter.GetBytes(i) |> applyEndianness
                                  | ObjectPath op -> marshall posAfterPadding endianness <| Primitive (Types.String op)
                                  | DBusPrimitiveValue.Signature s -> 
-                                               let utfBytes = System.Text.Encoding.UTF8.GetBytes(s)
+                                               let utfBytes = toUtf8Bytes s
                                                let stringBytes = Array.append utfBytes nul
                                                let stringLength = Array.length utfBytes |> byte
                                                
