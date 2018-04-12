@@ -71,8 +71,8 @@ let toMatchRuleStringTests =
 
         testCase "Stringified Type values rule should have correct values" <| fun _ ->
             let actualValues = 
-                [DBusMessageType.Signal; DBusMessageType.MethodCall; DBusMessageType.MethodReturn; DBusMessageType.Error] 
+                [DBusMessageType.Signal; DBusMessageType.MethodCall; DBusMessageType.MethodReturn; DBusMessageType.Error; DBusMessageType.Invalid] 
                 |> List.map (fun x -> toMatchRuleString { MatchAllRule with Type=Some(x) })
-            let expectedValues = ["type='signal'"; "type='method_call'"; "type='method_return'"; "type='error'"]
+            let expectedValues = ["type='signal'"; "type='method_call'"; "type='method_return'"; "type='error'"; ""]
             Expect.equal actualValues expectedValues "Stringified Type values rule should have correct values"
     ]
