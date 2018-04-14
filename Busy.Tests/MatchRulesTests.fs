@@ -75,4 +75,18 @@ let toMatchRuleStringTests =
                 |> List.map (fun x -> toMatchRuleString { MatchAllRule with Type=Some(x) })
             let expectedValues = ["type='signal'"; "type='method_call'"; "type='method_return'"; "type='error'"; ""]
             Expect.equal actualValues expectedValues "Stringified Type values rule should have correct values"
+
+        testCase "Stringified args should use correct escaping" <| fun _ ->
+            let stringValues = ["'";@"\";",";@"\\"]
+            let matchRuleArgs = new System.Collections.Generic.Dictionary<ArgMatchIdx, string>()
+
+            stringValues |> List.iteri (fun i s -> 
+                    let idx = ArgMatchIdx.create i |> fun x -> x.Value
+                    matchRuleArgs.[idx] <- s
+            )
+
+            let matchRule = { MatchAllRule with Args=Some(matchRuleArgs) }
+            let actualRuleString = toMatchRuleString matchRule
+            let expectedRuleString = @"arg0=''\''',arg1='\',arg2=',',arg3='\\'"
+            Expect.equal actualRuleString expectedRuleString "Stringified Type values rule should have correct values"
     ]

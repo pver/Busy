@@ -46,7 +46,9 @@ module MatchRules =
 
     let internal toMatchRuleString (rule:MatchRule) =
 
-        let formatKeyValue (key, value) = sprintf "%s='%s'" key value // todo: add escaping here!
+        let formatKeyValue (key, value:string) = 
+            let escapedValue = (value.Split('\'') |> String.concat @"'\''")
+            sprintf "%s='%s'" key escapedValue
     
         let typeValue = 
             match rule.Type with
