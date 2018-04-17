@@ -49,30 +49,30 @@ let toMatchRuleStringTests =
                     Args=Some( argDict)
                 }
             let expected = "type='signal',sender='org.freedesktop.DBus',interface='org.freedesktop.DBus',member='Foo',path='/bar/foo',destination=':452345.34',arg2='bar'"
-            let actual = toMatchRuleString matchRule
+            let actual = ToMatchRuleString matchRule
             Expect.equal actual expected "SpecExample should be stringified correctly"
 
         testCase "Stringified MatchAllRule should not contain anything" <| fun _ ->
             let matchRule = MatchAllRule
             let expected = ""
-            let actual = toMatchRuleString matchRule
+            let actual = ToMatchRuleString matchRule
             Expect.equal actual expected "Stringified MatchAllRule should not contain anything"
 
         testCase "Stringified PathNamespace rule should contain path_namespace" <| fun _ ->
             let matchRule = { MatchAllRule with Path=Some( PathMatchRule.PathNamespace("/com/example/foo")) }
             let expected = "path_namespace='/com/example/foo'"
-            let actual = toMatchRuleString matchRule
+            let actual = ToMatchRuleString matchRule
             Expect.equal actual expected "Stringified PathNamespace rule should contain path_namespace"
 
         testCase "Stringified Eavesdrop values rule should have correct values" <| fun _ ->
-            let actualValues = [true; false] |> List.map (fun x -> toMatchRuleString { MatchAllRule with Eavesdrop=Some(x) })
+            let actualValues = [true; false] |> List.map (fun x -> ToMatchRuleString { MatchAllRule with Eavesdrop=Some(x) })
             let expectedValues = ["eavesdrop='true'"; "eavesdrop='false'"]
             Expect.equal actualValues expectedValues "Stringified Eavesdrop values rule should have correct values"
 
         testCase "Stringified Type values rule should have correct values" <| fun _ ->
             let actualValues = 
                 [DBusMessageType.Signal; DBusMessageType.MethodCall; DBusMessageType.MethodReturn; DBusMessageType.Error; DBusMessageType.Invalid] 
-                |> List.map (fun x -> toMatchRuleString { MatchAllRule with Type=Some(x) })
+                |> List.map (fun x -> ToMatchRuleString { MatchAllRule with Type=Some(x) })
             let expectedValues = ["type='signal'"; "type='method_call'"; "type='method_return'"; "type='error'"; ""]
             Expect.equal actualValues expectedValues "Stringified Type values rule should have correct values"
 
@@ -86,7 +86,7 @@ let toMatchRuleStringTests =
             )
 
             let matchRule = { MatchAllRule with Args=Some(matchRuleArgs) }
-            let actualRuleString = toMatchRuleString matchRule
+            let actualRuleString = ToMatchRuleString matchRule
             let expectedRuleString = @"arg0=''\''',arg1='\',arg2=',',arg3='\\'"
             Expect.equal actualRuleString expectedRuleString "Stringified Type values rule should have correct values"
     ]

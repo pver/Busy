@@ -2,7 +2,6 @@ namespace Busy
 
 open MessageTypes
 open System.Collections.Generic
-open System.Collections.Generic
 
 module MatchRules =
 
@@ -44,7 +43,7 @@ module MatchRules =
         Arg0namespace = None; 
         Eavesdrop = None}
 
-    let internal toMatchRuleString (rule:MatchRule) =
+    let ToMatchRuleString (rule:MatchRule) =
 
         let formatKeyValue (key, value:string) = 
             let escapedValue = (value.Split('\'') |> String.concat @"'\''")
