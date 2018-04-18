@@ -11,6 +11,15 @@ let tests =
             let endpoint = new UnixDomainSocketEndpoint("/tmp/dbus-test")
             Expect.equal endpoint.AddressFamily AddressFamily.Unix "UnixDomainSocketEndpoint should use Unix address family"
 
+        testCase "UnixDomainSocketEndpoint should use Unix address family in serialized SocketAddr" <| fun _ ->
+            let endpoint = new UnixDomainSocketEndpoint("/tmp/dbus-test")
+            
+            let serializedEndpoint = endpoint.Serialize()
+
+            Expect.equal endpoint.AddressFamily serializedEndpoint.Family "UnixDomainSocketEndpoint serialization should use Unix address family"
+            Expect.isGreaterThan serializedEndpoint.Size 2 "UnixDomainSocketEndpoint serialization should at least contain address family prefix"
+            Expect.equal [|serializedEndpoint.[0]; serializedEndpoint.[1]|] [|0x1uy; 0x0uy|]  "UnixDomainSocketEndpoint serialization should use Unix address family prefix bytes"
+
         testCase "UnixDomainSocketEndpoint deserialize following serialize should result in original address" <| fun _ ->
             let socketAddress = "/tmp/dbus-test"
             
