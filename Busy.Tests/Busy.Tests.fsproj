@@ -13,6 +13,7 @@
     <Compile Include="MarshallingTests.fs" />
     <Compile Include="AuthenticationTests.fs" />
     <Compile Include="AddressTests.fs" />
+    <Compile Include="UnixDomainSocketTests.fs" />
     <Compile Include="AuthenticatorTests.fs" />
     <Compile Include="MatchRulesTests.fs" />
     <Compile Include="Main.fs" />

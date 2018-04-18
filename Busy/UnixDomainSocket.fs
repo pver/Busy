@@ -20,4 +20,4 @@ module UnixDomainSocket =
             new UnixDomainSocketEndpoint(domainSocket) :> EndPoint
 
         override __.AddressFamily = AddressFamily.Unix
-
+        member __.DomainSocketAddres = domainSocket
