@@ -55,6 +55,8 @@ module Transport =
             member __.Write bytes = write bytes
             member __.ReadBytes length = read length
 
+    type CreateTransportError = {CreateTransportErrorMessage:string; CreateTransportException:Option<System.Exception>}
+
     let FromAddress (address:DBusAddress) =
         try
             let transport = 
@@ -63,7 +65,9 @@ module Transport =
                 | LaunchdAddress _ 
                 | TcpSocketAddress _ 
                 | NonceTcpSocketAddress _ 
-                | UnixExecutedSubProcessAddress _ -> Error (sprintf "Transport for address %A not implemented yet" address)
+                | UnixExecutedSubProcessAddress _ -> 
+                    let notImplementedErrorMsg = (sprintf "Transport for address %A not implemented yet" address)
+                    Error ({CreateTransportErrorMessage=notImplementedErrorMsg; CreateTransportException=None})
 
             match transport with
             | Ok (validTransport) -> validTransport.Write [|0x0uy|] // start byte required by dbus daemon as first byte before any other bytes sent
@@ -71,4 +75,4 @@ module Transport =
 
             transport
         with
-        | ex -> Error (ex.Message)
+        | ex -> Error ({CreateTransportErrorMessage=ex.Message; CreateTransportException=Some(ex)})
