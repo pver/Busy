@@ -1,4 +1,6 @@
-namespace Busy.Authentication
+namespace Busy
+
+module Authentication =
 
 // Todo: use protocol bases message types:
 // >> Commands from the client to the server are as follows:
@@ -27,6 +29,11 @@ namespace Busy.Authentication
         abstract member Start: unit -> AuthenticationState
         abstract member ProcessInput: string -> AuthenticationState
 
+    let internal formatExternalUid (uid:string) = 
+        System.Text.Encoding.ASCII.GetBytes(uid)
+        |> Array.map (fun x -> System.String.Format("{0:x}", x)) 
+        |> String.concat ""
+
     type ExternalDBusAuthenticator (userid:string) =
         let mechanism = "EXTERNAL"
 
@@ -34,8 +41,10 @@ namespace Busy.Authentication
 
             member __.Mechanism = mechanism
             member __.Start() =
-                let nextState = AwaitsInput <| sprintf "AUTH %s %s" mechanism userid
-                nextState
+                let encodedUserId = formatExternalUid userid
+                let authCommand = sprintf "AUTH %s %s" mechanism encodedUserId
+                AwaitsInput authCommand 
+                
             member __.ProcessInput input = 
                 match input.StartsWith("OK ") with
                     | false ->  let error = Error input

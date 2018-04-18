@@ -3,10 +3,15 @@ module AuthenticationTests
 open Expecto
 open Busy.Authentication
 
-let private createExternalAuthenticator() = new ExternalDBusAuthenticator("30") :> IDBusAauthenticator
+let private createExternalAuthenticator() = new ExternalDBusAuthenticator("0") :> IDBusAauthenticator
+
+let createFormatExternalIdTestCase testCaseName userId expected =
+    testCase testCaseName <| fun _ ->
+          let subject = formatExternalUid userId
+          Expect.equal subject expected testCaseName
 
 [<Tests>]
-let tests =
+let externalAuthenticationTests =
   testList "ExternalAuthenticatorTests" [
     testCase "Mechanism should be EXTERNAL" <| fun _ ->
       let authenticator = createExternalAuthenticator()
@@ -35,4 +40,8 @@ let tests =
       let subject = authenticator.ProcessInput("ERROR some error message")
       let expectedSubject = Completed <| Error ("ERROR some error message")
       Expect.equal subject expectedSubject "External authenticator should fail on ERROR correctly"
+
+    createFormatExternalIdTestCase "Unix root id should be formatted correctly" "0" "30"
+    createFormatExternalIdTestCase "Unix 1000 id should be formatted correctly" "1000" "31303030"
+    createFormatExternalIdTestCase "Windows example id should be formatted correctly" "S-1-5-18" "532d312d352d3138"
   ]
