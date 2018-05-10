@@ -42,6 +42,13 @@ let StarterAddressesTests =
 
             Expect.isNone parseResult "No configured environment variable should result in None starter bus address"
 
+        testCase "Configured environment variable should be reflected in starter bus address" <| fun _ ->
+            let parseResult = setCallRestore starterBusAddressVariableName "unix:path=/abcdefg" StarterBusAddress
+
+            let expectedAddress = UnixDomainSocketAddress << Map.ofSeq <| [("path","/abcdefg")]
+            let expectedParseResult = Some (ParseAddressResult.ValidAddress expectedAddress) 
+            Expect.equal parseResult expectedParseResult "Configured environment variable should be reflected in starter bus address"
+
         testCase "No configured environment variable results in Unknown starter bus type" <| fun _ ->
             let busTypeEmpty = setCallRestore starterBusTypeVariableName "" StarterBusType
             
