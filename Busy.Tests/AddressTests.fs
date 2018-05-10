@@ -2,7 +2,6 @@ module AddressTests
 
 open Expecto
 open Busy.Address
-open Busy.BusAddresses
 
 let createInvalidAddressTestCase name invalidValue =
     testCase name <| fun _ ->
@@ -122,37 +121,3 @@ let AddressTests =
           let expected = [|addr1; addr3|]
           Expect.equal validAddresses expected "Only valid addresses left"
     ] 
-
-let private systemBusTestLock = new System.Object()
-
-[<Tests>]
-let BusAddressesTests =
-    testList "SystemBusTests" [
-        testCase "No configured environment variable results in default system bus address" <| fun _ ->
-            let systemBusAddressParseResult = 
-                lock systemBusTestLock 
-                    ( fun () -> 
-                          let backupEnvVariable = System.Environment.GetEnvironmentVariable "DBUS_SYSTEM_BUS_ADDRESS"
-                          System.Environment.SetEnvironmentVariable("DBUS_SYSTEM_BUS_ADDRESS", "")
-                          let result = SystemBusAddress()
-                          System.Environment.SetEnvironmentVariable("DBUS_SYSTEM_BUS_ADDRESS", backupEnvVariable)
-                          result
-                    )
-
-            let expectedAddress = UnixDomainSocketAddress << Map.ofSeq <| [("path","/var/run/dbus/system_bus_socket")]
-            Expect.equal systemBusAddressParseResult (ParseAddressResult.ValidAddress expectedAddress) "No configured environment variable should result in default system bus address"
-
-        testCase "Configured environment variable should be reflected in system bus address" <| fun _ ->
-            let systemBusAddressParseResult = 
-                lock systemBusTestLock 
-                    ( fun () -> 
-                          let backupEnvVariable = System.Environment.GetEnvironmentVariable "DBUS_SYSTEM_BUS_ADDRESS"
-                          System.Environment.SetEnvironmentVariable("DBUS_SYSTEM_BUS_ADDRESS", "unix:path=/abcdefg")
-                          let result = SystemBusAddress()
-                          System.Environment.SetEnvironmentVariable("DBUS_SYSTEM_BUS_ADDRESS", backupEnvVariable)
-                          result
-                    )
-
-            let expectedAddress = UnixDomainSocketAddress << Map.ofSeq <| [("path","/abcdefg")]
-            Expect.equal systemBusAddressParseResult (ParseAddressResult.ValidAddress expectedAddress) "Configured environment variable should be reflected in system bus address"
-    ]
