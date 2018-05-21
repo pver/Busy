@@ -14,11 +14,12 @@ module Address =
         | TcpSocketAddress of AddressProperties
         | NonceTcpSocketAddress of AddressProperties
         | UnixExecutedSubProcessAddress of AddressProperties
-        
+    
+    type InvalidDBusAddress = string
     type ParseAddressResult =
         | ValidAddress of DBusAddress
         | ParseAddressResults of ParseAddressResult[] // composite list of addresses (separated by semi colon)
-        | InvalidAddress of string // malformed in any way
+        | InvalidAddress of InvalidDBusAddress // malformed in any way
         | UnsupportedAddress of UnsupportedAddress // correctly formed, but unknown or unsupported transporttype
         
     let rec internal filterValidAddresses (parseResult:ParseAddressResult) =
