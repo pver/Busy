@@ -41,8 +41,11 @@ type Bus (transport:ITransport) =
         | InvalidAddress a -> Error { CreateBusErrorMessage="Could not retrieve a valid address"; CreateBusInnerError= Some(AddressError a) }
         | _ -> failwith "not implemented yet"
     
-    interface IBus with 
-        member __.SendMessage (message:DBusMessage) =
+    member __.Transport = transport
+    member __.SendMessage (message:DBusMessage) =
             Marshalling.marshallMessage message
             |> transport.Write
-        member __.Transport = transport
+
+    interface IBus with 
+        member this.SendMessage (message:DBusMessage) = this.SendMessage message
+        member this.Transport = this.Transport
