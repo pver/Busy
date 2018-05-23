@@ -77,7 +77,7 @@ module Marshalling =
         
         let headerFieldsArrayType = (StructType [PrimitiveType ByteType; VariantType])
 
-        let headerFieldToDbusValue (field:DBusMessageHeaderField) = 
+        let headerFieldToDbusValue (field:DBusMessageHeaderFieldValue) = 
             let dbusValue = match field with
                             | Path s -> Primitive <| ObjectPath s
                             | Interface i -> Primitive <| String i

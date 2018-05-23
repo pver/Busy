@@ -23,19 +23,31 @@ module rec MessageTypes =
 
         type DBusMessageBody = seq<DBusValue>
 
+        type DBusMessageHeaderFields =
+            {
+                BodySignature:Option<Signature> 
+                ObjectPath:Option<string>
+                Interface:Option<string>
+                Member:Option<string>
+                ErrorName:Option<string>
+                ReplySerial:Option<uint32>
+                Sender:Option<string>
+                Destination:Option<string>
+            }
+
         type DBusMessage = 
             {
                 Endianness : DBusMessageEndianness
                 MessageType : DBusMessageType
                 Flags : DBusMessageFlag[]
                 Body : DBusMessageBody
-                HeaderFields : DBusMessageHeaderField[]
+                HeaderFields : DBusMessageHeaderFieldValue[]
                 SequenceNumber : uint32
             }
             with 
             member __.ProtocolVersion = 1uy
         
-        type DBusMessageHeaderField =
+        type DBusMessageHeaderFieldValue =
             Invalid 
             | Path of string
             | Interface of string

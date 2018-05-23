@@ -18,7 +18,7 @@ type MessageFactory () =
 
         static let createMessageHeaderFields (body:DBusMessageBody) (objectPath:Option<string>) (iface:Option<string>) 
                 (_member:Option<string>) (errorName:Option<string>) (replySerial:Option<uint32>) (sender:Option<string>) (destination:Option<string>) =
-            let mapper (f:('a -> DBusMessageHeaderField)) (x:'a option) = match x with Some y -> [|f y|] | None -> [||]
+            let mapper (f:('a -> DBusMessageHeaderFieldValue)) (x:'a option) = match x with Some y -> [|f y|] | None -> [||]
 
             Array.concat [|
                 objectPath |> mapper Path
