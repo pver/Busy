@@ -16,7 +16,7 @@ module rec MessageTypes =
             | Error = 3uy
             | Signal = 4uy
 
-        type DBusMessageFlags =
+        type DBusMessageFlag =
             NoReplyExpected = 1uy
             | NoAutoStart = 2uy
             | AllowInteractiveAuthorization = 4uy
@@ -27,15 +27,15 @@ module rec MessageTypes =
             {
                 Endianness : DBusMessageEndianness
                 MessageType : DBusMessageType
-                Flags : DBusMessageFlags[]
+                Flags : DBusMessageFlag[]
                 Body : DBusMessageBody
-                Headerfields : DBusMessageHeaderFields[]
+                HeaderFields : DBusMessageHeaderField[]
                 SequenceNumber : uint32
             }
             with 
             member __.ProtocolVersion = 1uy
         
-        type DBusMessageHeaderFields =
+        type DBusMessageHeaderField =
             Invalid 
             | Path of string
             | Interface of string

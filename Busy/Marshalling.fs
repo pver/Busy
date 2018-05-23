@@ -77,7 +77,7 @@ module Marshalling =
         
         let headerFieldsArrayType = (StructType [PrimitiveType ByteType; VariantType])
 
-        let headerFieldToDbusValue (field:DBusMessageHeaderFields) = 
+        let headerFieldToDbusValue (field:DBusMessageHeaderField) = 
             let dbusValue = match field with
                             | Path s -> Primitive <| ObjectPath s
                             | Interface i -> Primitive <| String i
@@ -92,7 +92,7 @@ module Marshalling =
 
             Struct ([|Primitive <| DBusPrimitiveValue.Byte ((byte) field.FieldCode); Variant dbusValue|])
 
-        let headerFieldsValues = message.Headerfields |> Array.map headerFieldToDbusValue
+        let headerFieldsValues = message.HeaderFields |> Array.map headerFieldToDbusValue
 
         let headerValues = [
                             Primitive <| DBusPrimitiveValue.Byte ((byte) message.Endianness)

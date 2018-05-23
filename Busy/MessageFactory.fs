@@ -18,7 +18,7 @@ type MessageFactory () =
 
         static let createMessageHeaderFields (body:DBusMessageBody) (objectPath:Option<string>) (iface:Option<string>) 
                 (_member:Option<string>) (errorName:Option<string>) (replySerial:Option<uint32>) (sender:Option<string>) (destination:Option<string>) =
-            let mapper (f:('a -> DBusMessageHeaderFields)) (x:'a option) = match x with Some y -> [|f y|] | None -> [||]
+            let mapper (f:('a -> DBusMessageHeaderField)) (x:'a option) = match x with Some y -> [|f y|] | None -> [||]
 
             Array.concat [|
                 objectPath |> mapper Path
@@ -38,11 +38,11 @@ type MessageFactory () =
                 Flags = flags;
                 Body = body;
                 SequenceNumber = sequenceNumber;
-                Headerfields = fields;
+                HeaderFields = fields;
             }
 
         static member CreateSignal (sequenceNumber:uint32) (objectPath:string) (iface:string) (_member:string) (body:DBusMessageBody) (sender:Option<string>) (destination:Option<string>) = 
-            let flags = [| DBusMessageFlags.NoReplyExpected |];
+            let flags = [| DBusMessageFlag.NoReplyExpected |];
             let headerFields = createMessageHeaderFields body (Some objectPath) (Some iface) (Some _member) None None sender destination
             let messageType = DBusMessageType.Signal
             
@@ -57,14 +57,14 @@ type MessageFactory () =
             createMessage systemEndianness messageType flags body sequenceNumber headerFields
 
         static member CreateError (sequenceNumber:uint32) (replySerial:uint32) (errorName:string) (body:DBusMessageBody) (sender:Option<string>) (destination:Option<string>) = 
-            let flags = [| DBusMessageFlags.NoReplyExpected |];
+            let flags = [| DBusMessageFlag.NoReplyExpected |];
             let headerFields = createMessageHeaderFields body None None None (Some errorName) (Some replySerial) sender destination
             let messageType = DBusMessageType.Error
 
             createMessage systemEndianness messageType flags body sequenceNumber headerFields
 
         static member CreateMethodReturn (sequenceNumber:uint32) (replySerial:uint32) (body:DBusMessageBody) (sender:Option<string>) (destination:Option<string>) = 
-            let flags = [| DBusMessageFlags.NoReplyExpected |];
+            let flags = [| DBusMessageFlag.NoReplyExpected |];
             let headerFields = createMessageHeaderFields body None None None None (Some replySerial) sender destination
             let messageType = DBusMessageType.MethodReturn
 

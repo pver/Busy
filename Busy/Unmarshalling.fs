@@ -144,15 +144,15 @@ module rec Unmarshalling =
     let internal getHeaderField (fieldCode:byte) (fieldValue:DBusValue) =
         match (fieldCode, fieldValue) with
         | (0uy, _) -> Error "Header field Invalid found in header"
-        | (1uy, Primitive (ObjectPath path)) -> Ok (Some (DBusMessageHeaderFields.Path path))
-        | (2uy, Primitive (String i)) -> Ok (Some (DBusMessageHeaderFields.Interface i))
-        | (3uy, Primitive (String m)) -> Ok (Some (DBusMessageHeaderFields.Member m))
-        | (4uy, Primitive (String e)) -> Ok (Some (DBusMessageHeaderFields.ErrorName e))
-        | (5uy, Primitive (Uint32 s)) -> Ok (Some (DBusMessageHeaderFields.ReplySerial s))
-        | (6uy, Primitive (String d)) -> Ok (Some (DBusMessageHeaderFields.Destination d))
-        | (7uy, Primitive (String s)) -> Ok (Some (DBusMessageHeaderFields.Sender s))
-        | (8uy, Primitive (DBusPrimitiveValue.Signature s)) -> Ok (Some (DBusMessageHeaderFields.Signature s))
-        | (9uy, Primitive (Uint32 u)) -> Ok (Some (DBusMessageHeaderFields.UnixFds u))
+        | (1uy, Primitive (ObjectPath path)) -> Ok (Some (DBusMessageHeaderField.Path path))
+        | (2uy, Primitive (String i)) -> Ok (Some (DBusMessageHeaderField.Interface i))
+        | (3uy, Primitive (String m)) -> Ok (Some (DBusMessageHeaderField.Member m))
+        | (4uy, Primitive (String e)) -> Ok (Some (DBusMessageHeaderField.ErrorName e))
+        | (5uy, Primitive (Uint32 s)) -> Ok (Some (DBusMessageHeaderField.ReplySerial s))
+        | (6uy, Primitive (String d)) -> Ok (Some (DBusMessageHeaderField.Destination d))
+        | (7uy, Primitive (String s)) -> Ok (Some (DBusMessageHeaderField.Sender s))
+        | (8uy, Primitive (DBusPrimitiveValue.Signature s)) -> Ok (Some (DBusMessageHeaderField.Signature s))
+        | (9uy, Primitive (Uint32 u)) -> Ok (Some (DBusMessageHeaderField.UnixFds u))
         | (1uy, _) -> Error "Invalid value type for Path header field"
         | (2uy, _) -> Error "Invalid value type for Interface header field"
         | (3uy, _) -> Error "Invalid value type for Member header field"
@@ -234,7 +234,7 @@ module rec Unmarshalling =
             let bodySignature = headerFields 
                                 |> Array.choose (fun x -> 
                                     match x with 
-                                    | DBusMessageHeaderFields.Signature s -> Some s 
+                                    | DBusMessageHeaderField.Signature s -> Some s 
                                     | _ -> None)
                                 |> Array.tryHead
             
@@ -244,9 +244,9 @@ module rec Unmarshalling =
 
             let! body = unmarshallBody byteProvider startPosBody endianness bodySignature
 
-            let hasMessageFlag (f:DBusMessageFlags) = messageFlagsByte &&& byte f |> (=) 1uy
-            let flags = Enum.GetValues(typeof<DBusMessageFlags>)
-                        |> Seq.cast<DBusMessageFlags>
+            let hasMessageFlag (f:DBusMessageFlag) = messageFlagsByte &&& byte f |> (=) 1uy
+            let flags = Enum.GetValues(typeof<DBusMessageFlag>)
+                        |> Seq.cast<DBusMessageFlag>
                         |> Seq.fold (fun acc x -> if hasMessageFlag x then Array.append acc [|x|] else acc) [||]
 
             let msg = {
@@ -254,7 +254,7 @@ module rec Unmarshalling =
                  MessageType = Microsoft.FSharp.Core.LanguagePrimitives.EnumOfValue<byte, DBusMessageType>(messageType)
                  Flags = flags
                  Body = body
-                 Headerfields = headerFields
+                 HeaderFields = headerFields
                  SequenceNumber = sequenceNumber
             }
             return msg

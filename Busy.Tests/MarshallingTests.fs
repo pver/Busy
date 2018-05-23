@@ -30,7 +30,7 @@ let testValueMarshalling (value:DBusValue) (expectedLittleEndian:byte[]) (expect
       | Ok (unmarshalledValue, _) -> Expect.equal unmarshalledValue value <| sprintf "%A  as big endian bytes should be unmarshalled correctly" value
 
 let sortMessageHeaderFields message =
-  {message with Headerfields = (message.Headerfields |> Array.sortBy (fun x -> x.FieldCode) )}
+  {message with HeaderFields = (message.HeaderFields |> Array.sortBy (fun x -> x.FieldCode) )}
   //message
 
 [<Tests>]
