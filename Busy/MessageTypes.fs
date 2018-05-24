@@ -41,7 +41,7 @@ module rec MessageTypes =
                 MessageType : DBusMessageType
                 Flags : DBusMessageFlag[]
                 Body : DBusMessageBody
-                HeaderFields : DBusMessageHeaderFieldValue[]
+                HeaderFields : DBusMessageHeaderFields
                 SequenceNumber : uint32
             }
             with 
