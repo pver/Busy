@@ -90,3 +90,28 @@ let toMatchRuleStringTests =
             let expectedRuleString = @"arg0=''\''',arg1='\',arg2=',',arg3='\\'"
             Expect.equal actualRuleString expectedRuleString "Stringified Type values rule should have correct values"
     ]
+
+let createMatchesRuleTest name message rule expectedResult =
+    testCase name <| fun _ ->
+          let actualResult = MessageAppliesToRule message rule
+          Expect.equal actualResult expectedResult name
+
+let signalMessage = Busy.MessageFactory.CreateSignal 112u "/my/object/path" "my.interface" "signalMember" [] None None
+let methodCallMessage = Busy.MessageFactory.CreateMethodCall 123u "/org/freedesktop/DBus" (Some "org.freedesktop.DBus") "ListNames" [||] (Some ":1.8") (Some "org.freedesktop.DBus") 
+
+let signalMessageExactMatchRule = {
+    MatchAllRule with 
+        Type = Some(DBusMessageType.Signal)
+        Interface = Some("my.interface")
+        Member = Some("signalMember")
+        Path = Some( PathMatchRule.Path "/my/object/path" ) }
+
+[<Tests>]
+let InvalidAddressTests =
+    testList "MessageAppliesToRuleTests" [
+        createMatchesRuleTest "matchallrule matches signal message" signalMessage MatchAllRule true
+        createMatchesRuleTest "matchallrule matches methodCall message" methodCallMessage MatchAllRule true
+
+        createMatchesRuleTest "exact signal rule matches signal message" signalMessage signalMessageExactMatchRule true
+        createMatchesRuleTest "exact signal rule doesn't match method call message" methodCallMessage signalMessageExactMatchRule false
+    ]

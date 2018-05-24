@@ -49,18 +49,6 @@ module MarshallingUtilities =
         |]
 
     let internal messageFieldValueArrayToMessageHeaderFields (values:DBusMessageHeaderFieldValue[])  =
-        let emptyFields =
-            {
-                BodySignature = None
-                ObjectPath = None
-                Interface = None
-                Member = None
-                ErrorName = None
-                ReplySerial = None
-                Sender = None
-                Destination = None
-            }
-        
         values 
         |> Array.fold (fun acc x -> 
                                         match x with 
@@ -74,4 +62,4 @@ module MarshallingUtilities =
                                         | Signature s -> {acc with BodySignature = Some(s)}
                                         // Todo | UnixFds u -> {acc with UnixFds = Some(u)}
                                         | _ -> acc
-            ) emptyFields
+            ) Utilities.emptyDBusMessageHeaderFields

@@ -1,4 +1,5 @@
 namespace Busy
+open MessageTypes
 
 module Utilities =
         open System.Text.RegularExpressions
@@ -97,3 +98,15 @@ module Utilities =
             |> Result.map (fun types -> types |> List.toArray)
 
         let internal prependError (extendedInfo:string) (r:Result<'a,string>) = r |> Result.mapError (fun x -> sprintf "%s %s" extendedInfo x)
+
+        let internal emptyDBusMessageHeaderFields : DBusMessageHeaderFields =
+            {
+                BodySignature = None
+                ObjectPath = None
+                Interface = None
+                Member = None
+                ErrorName = None
+                ReplySerial = None
+                Sender = None
+                Destination = None
+            }

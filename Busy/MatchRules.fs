@@ -20,27 +20,27 @@ module MatchRules =
         | PathNamespace of string
 
     type MatchRule = {
-        Type:Option<DBusMessageType>; 
-        Sender:Option<string>;
-        Interface:Option<string>;
-        Member:Option<string>;
-        Path:Option<PathMatchRule>;
-        Destination:Option<string>;
-        Args:Option<Dictionary<ArgMatchIdx, string>>;
-        ArgPaths:Option<Dictionary<ArgMatchIdx, string>>;
-        Arg0namespace:Option<string>;
-        Eavesdrop:Option<bool>}
+        Type : Option<DBusMessageType>
+        Sender : Option<string>
+        Interface : Option<string>
+        Member : Option<string>
+        Path : Option<PathMatchRule>
+        Destination : Option<string>
+        Args : Option<Dictionary<ArgMatchIdx, string>>
+        ArgPaths : Option<Dictionary<ArgMatchIdx, string>>
+        Arg0namespace : Option<string>
+        Eavesdrop : Option<bool>}
 
     let MatchAllRule = {
-        Type = None; 
-        Sender = None; 
-        Interface = None; 
-        Member = None; 
-        Path = None; 
-        Destination = None; 
-        Args = None; 
-        ArgPaths = None; 
-        Arg0namespace = None; 
+        Type = None
+        Sender = None 
+        Interface = None 
+        Member = None
+        Path = None
+        Destination = None 
+        Args = None
+        ArgPaths = None 
+        Arg0namespace = None 
         Eavesdrop = None}
 
     let ToMatchRuleString (rule:MatchRule) =
@@ -94,3 +94,9 @@ module MatchRules =
         |> String.concat ","
 
     // Todo: add MatchRuleBuilder for C# interop purposes?
+
+    let MessageAppliesToRule (message:DBusMessage) rule =
+        let matches (messageValue:'a) (ruleValue:'a option) = match ruleValue with Some y -> y = messageValue | None -> true
+
+        matches message.MessageType rule.Type
+        
