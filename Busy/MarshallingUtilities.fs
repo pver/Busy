@@ -41,9 +41,9 @@ module MarshallingUtilities =
             fields.ObjectPath |> mapper Path
             fields.Interface |> mapper Interface
             fields.Member |> mapper Member
+            fields.Destination |> mapper Destination
             fields.ErrorName |> mapper ErrorName
             fields.ReplySerial |> mapper ReplySerial
-            fields.Destination |> mapper Destination
             fields.BodySignature |> mapper Signature
             fields.Sender |> mapper Sender
         |]
