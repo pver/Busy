@@ -254,7 +254,7 @@ module rec Unmarshalling =
                  MessageType = Microsoft.FSharp.Core.LanguagePrimitives.EnumOfValue<byte, DBusMessageType>(messageType)
                  Flags = flags
                  Body = body
-                 HeaderFields = headerFields
+                 HeaderFields = messageFieldValueArrayToMessageHeaderFields headerFields
                  SequenceNumber = sequenceNumber
             }
             return msg

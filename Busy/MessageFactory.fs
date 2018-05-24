@@ -13,23 +13,22 @@ type MessageFactory () =
         static let getOptionalBodySignature (body:DBusMessageBody) =
             let signature = body |> Seq.map (fun x -> x.Type.Signature) |> Seq.fold (fun acc x -> sprintf "%s%s" acc x) ""
             match signature with
-            | "" -> [||]
-            | x -> [|Signature x|]
+            | "" -> None
+            | x -> Some(x)
 
         static let createMessageHeaderFields (body:DBusMessageBody) (objectPath:Option<string>) (iface:Option<string>) 
                 (_member:Option<string>) (errorName:Option<string>) (replySerial:Option<uint32>) (sender:Option<string>) (destination:Option<string>) =
-            let mapper (f:('a -> DBusMessageHeaderFieldValue)) (x:'a option) = match x with Some y -> [|f y|] | None -> [||]
-
-            Array.concat [|
-                objectPath |> mapper Path
-                iface |> mapper Interface
-                _member |> mapper Member
-                errorName |> mapper ErrorName
-                replySerial |> mapper ReplySerial
-                destination |> mapper Destination
-                getOptionalBodySignature body
-                sender |> mapper Sender
-            |]
+            
+            {
+                BodySignature = (getOptionalBodySignature body)
+                ObjectPath = objectPath
+                Interface = iface
+                Member = _member
+                ErrorName = errorName
+                ReplySerial = replySerial
+                Sender = sender
+                Destination = destination
+            }
 
         static let createMessage endianness messageType flags body sequenceNumber fields =
             {

@@ -1,6 +1,7 @@
 namespace Busy
 
 open Types
+open MessageTypes
 
 module MarshallingUtilities =
     
@@ -32,3 +33,45 @@ module MarshallingUtilities =
 
     let internal paddingSize (streamPosition:StreamPosition) (alignment:int) = 
         (alignment - ((int32) (streamPosition % (alignment)))) % alignment
+
+    let internal messageHeaderFieldsToFieldValueArray (fields:DBusMessageHeaderFields) =
+        let mapper (f:('a -> DBusMessageHeaderFieldValue)) (x:'a option) = match x with Some y -> [|f y|] | None -> [||]
+
+        Array.concat [|
+            fields.ObjectPath |> mapper Path
+            fields.Interface |> mapper Interface
+            fields.Member |> mapper Member
+            fields.ErrorName |> mapper ErrorName
+            fields.ReplySerial |> mapper ReplySerial
+            fields.Destination |> mapper Destination
+            fields.BodySignature |> mapper Signature
+            fields.Sender |> mapper Sender
+        |]
+
+    let internal messageFieldValueArrayToMessageHeaderFields (values:DBusMessageHeaderFieldValue[])  =
+        let emptyFields =
+            {
+                BodySignature = None
+                ObjectPath = None
+                Interface = None
+                Member = None
+                ErrorName = None
+                ReplySerial = None
+                Sender = None
+                Destination = None
+            }
+        
+        values 
+        |> Array.fold (fun acc x -> 
+                                        match x with 
+                                        | Path p -> {acc with ObjectPath = Some(p)}
+                                        | Interface i -> {acc with Interface = Some(i)}
+                                        | Member m -> {acc with Member = Some(m)}
+                                        | ErrorName e -> {acc with ErrorName = Some(e)}
+                                        | ReplySerial rs -> {acc with ReplySerial = Some(rs)}
+                                        | Destination d -> {acc with Destination = Some(d)}
+                                        | Sender s -> {acc with Sender = Some(s)}
+                                        | Signature s -> {acc with BodySignature = Some(s)}
+                                        // Todo | UnixFds u -> {acc with UnixFds = Some(u)}
+                                        | _ -> acc
+            ) emptyFields
