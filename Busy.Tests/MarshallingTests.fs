@@ -29,9 +29,9 @@ let testValueMarshalling (value:DBusValue) (expectedLittleEndian:byte[]) (expect
       | Error e -> Expect.isOk unmarshalledBig e
       | Ok (unmarshalledValue, _) -> Expect.equal unmarshalledValue value <| sprintf "%A  as big endian bytes should be unmarshalled correctly" value
 
-let sortMessageHeaderFields message =
-  //{message with HeaderFields = (message.HeaderFields |> Array.sortBy (fun x -> x.FieldCode) )}
-  message
+// let sortMessageHeaderFields message =
+//   //{message with HeaderFields = (message.HeaderFields |> Array.sortBy (fun x -> x.FieldCode) )}
+//   message
 
 [<Tests>]
 let tests =
@@ -164,7 +164,6 @@ let tests =
 
       let messageBody = [|(Primitive <| String ":1.1")|]
       let expectedMessage = Busy.MessageFactory.CreateSignal 2ul "/org/freedesktop/DBus" "org.freedesktop.DBus" "NameAcquired" messageBody (Some "org.freedesktop.DBus") (Some ":1.1")
-                            |> sortMessageHeaderFields
       
       // use filewriter = new BinaryWriter(File.Open("testfile.bin", FileMode.Create))
       // filewriter.Write(bytesLittleEndian)
@@ -200,7 +199,7 @@ let tests =
       match unmarshalledMessage with
       | Error e -> Expect.isOk unmarshalledMessage e
       | Ok (unmarshalledMessage) -> 
-            Expect.equal (unmarshalledMessage |> sortMessageHeaderFields) expectedMessage "signal 'owner changed' unmarshalling should result in original message"
+            Expect.equal unmarshalledMessage expectedMessage "signal 'owner changed' unmarshalling should result in original message"
             let bytesLittleEndian = marshallMessage unmarshalledMessage
             Expect.equal bytesLittleEndian expectedBytesLittleEndian "signal 'owner changed' marshalling should result in correct byte representation"
 
@@ -208,7 +207,6 @@ let tests =
     testCase "method call 'list names' marshalling should result in correct byte representation" <| fun _ ->
       let messageBody = [||]
       let expectedMessage = Busy.MessageFactory.CreateMethodCall 2ul "/org/freedesktop/DBus" (Some "org.freedesktop.DBus") "ListNames" messageBody (Some ":1.8") (Some "org.freedesktop.DBus") 
-                            |> sortMessageHeaderFields
 
       // bytes as sent by the daemon when aqcuiring name
       let expectedBytesLittleEndian = [|
@@ -238,7 +236,7 @@ let tests =
       match unmarshalledMessage with
       | Error e -> Expect.isOk unmarshalledMessage e
       | Ok (unmarshalledMessage) -> 
-              Expect.equal (unmarshalledMessage |> sortMessageHeaderFields) expectedMessage "method call unmarshalling should result in original message"
+              Expect.equal unmarshalledMessage expectedMessage "method call unmarshalling should result in original message"
               let bytesLittleEndian = marshallMessage unmarshalledMessage
               Expect.equal bytesLittleEndian expectedBytesLittleEndian "method call marshalling should result in correct byte representation"
 
@@ -246,7 +244,7 @@ let tests =
       let messageBody = [|Array (PrimitiveType StringType,
                            [|Primitive (String "org.freedesktop.DBus"); Primitive (String ":1.8")|])|];
       let expectedMessage = Busy.MessageFactory.CreateMethodReturn 3ul 2ul messageBody (Some "org.freedesktop.DBus") (Some ":1.8")
-                            |> sortMessageHeaderFields
+                            
       // bytes as sent by the daemon when aqcuiring name
       let expectedBytesLittleEndian = [|
             0x6Cuy; 0x02uy; 0x01uy; 0x01uy; 0x29uy; 0x00uy; 0x00uy; 0x00uy 
@@ -272,15 +270,13 @@ let tests =
       match unmarshalledMessage with
       | Error e -> Expect.isOk unmarshalledMessage e
       | Ok (unmarshalledMessage) -> 
-              Expect.equal (unmarshalledMessage |> sortMessageHeaderFields) expectedMessage "method return unmarshalling should result in original message"
+              Expect.equal unmarshalledMessage expectedMessage "method return unmarshalling should result in original message"
               let bytesLittleEndian = marshallMessage unmarshalledMessage
               Expect.equal bytesLittleEndian expectedBytesLittleEndian "method return marshalling should result in correct byte representation"
 
     testCase "method error 'list names' marshalling should result in correct byte representation" <| fun _ ->
       let messageBody = [|Primitive (String "org.freedesktop.DBus does not understand message ListName")|];
       let expectedMessage = Busy.MessageFactory.CreateError 3ul 2ul "org.freedesktop.DBus.Error.UnknownMethod" messageBody (Some "org.freedesktop.DBus") (Some ":1.6")
-                            |> sortMessageHeaderFields
-
       
       // bytes as sent by the daemon when aqcuiring name
       let expectedBytesLittleEndian = [|
@@ -316,7 +312,7 @@ let tests =
       match unmarshalledMessage with
       | Error e -> Expect.isOk unmarshalledMessage e
       | Ok (unmarshalledMessage) -> 
-              Expect.equal (unmarshalledMessage |> sortMessageHeaderFields) expectedMessage "method error unmarshalling should result in original message"
+              Expect.equal unmarshalledMessage expectedMessage "method error unmarshalling should result in original message"
               let bytesLittleEndian = marshallMessage unmarshalledMessage
               Expect.equal bytesLittleEndian expectedBytesLittleEndian "method error marshalling should result in correct byte representation"
 
