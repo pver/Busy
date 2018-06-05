@@ -96,22 +96,35 @@ let createMatchesRuleTest name message rule expectedResult =
           let actualResult = MessageAppliesToRule message rule
           Expect.equal actualResult expectedResult name
 
-let signalMessage = Busy.MessageFactory.CreateSignal 112u "/my/object/path" "my.interface" "signalMember" [] None None
+let signalMessage = Busy.MessageFactory.CreateSignal 112u "/my/object/path" "my.interface" "signalMember" [] (Some ":1.14") None
 let methodCallMessage = Busy.MessageFactory.CreateMethodCall 123u "/org/freedesktop/DBus" (Some "org.freedesktop.DBus") "ListNames" [||] (Some ":1.8") (Some "org.freedesktop.DBus") 
 
 let signalMessageExactMatchRule = {
     MatchAllRule with 
         Type = Some(DBusMessageType.Signal)
-        Interface = Some("my.interface")
-        Member = Some("signalMember")
-        Path = Some( PathMatchRule.Path "/my/object/path" ) }
+        Interface = Some(signalMessage.HeaderFields.Interface.Value)
+        Member = Some(signalMessage.HeaderFields.Member.Value)
+        Path = Some(PathMatchRule.Path signalMessage.HeaderFields.ObjectPath.Value ) 
+        Sender = Some(signalMessage.HeaderFields.Sender.Value)}
 
 [<Tests>]
 let InvalidAddressTests =
     testList "MessageAppliesToRuleTests" [
         createMatchesRuleTest "matchallrule matches signal message" signalMessage MatchAllRule true
-        createMatchesRuleTest "matchallrule matches methodCall message" methodCallMessage MatchAllRule true
-
         createMatchesRuleTest "exact signal rule matches signal message" signalMessage signalMessageExactMatchRule true
+        createMatchesRuleTest "signal rule exact NamespacePath matches signal message" signalMessage {signalMessageExactMatchRule with Path=Some( PathMatchRule.PathNamespace signalMessage.HeaderFields.ObjectPath.Value )} true
+        createMatchesRuleTest "signal rule shorter NamespacePath matches signal message" signalMessage {signalMessageExactMatchRule with Path=Some( PathMatchRule.PathNamespace "/my" )} true
+
+        createMatchesRuleTest "signal rule with Interface doesn't match signal message without Interface " {signalMessage with HeaderFields = {signalMessage.HeaderFields with Interface=None}} signalMessageExactMatchRule false        
+        createMatchesRuleTest "signal rule with Path doesn't match signal message without Path " {signalMessage with HeaderFields = {signalMessage.HeaderFields with ObjectPath=None}} signalMessageExactMatchRule false        
+        createMatchesRuleTest "signal rule with Sender doesn't match signal message without Sender " {signalMessage with HeaderFields = {signalMessage.HeaderFields with Sender=None}} signalMessageExactMatchRule false        
+ 
+        createMatchesRuleTest "signal rule different Interface doesn't match signal message" signalMessage {signalMessageExactMatchRule with Interface=Some("thingdifferent")} false
+        createMatchesRuleTest "signal rule different Member doesn't match signal message" signalMessage {signalMessageExactMatchRule with Member=Some("thingdifferent")} false
+        createMatchesRuleTest "signal rule different Path doesn't match signal message" signalMessage {signalMessageExactMatchRule with Path=Some( PathMatchRule.Path "thingdifferent" )} false
+        createMatchesRuleTest "signal rule different PathNamespace doesn't match signal message" signalMessage {signalMessageExactMatchRule with Path=Some( PathMatchRule.PathNamespace "thingdifferent" )} false
+        createMatchesRuleTest "signal rule different Sender doesn't match signal message" signalMessage {signalMessageExactMatchRule with Sender=Some(":different")} false
+
+        createMatchesRuleTest "matchallrule matches methodCall message" methodCallMessage MatchAllRule true
         createMatchesRuleTest "exact signal rule doesn't match method call message" methodCallMessage signalMessageExactMatchRule false
     ]

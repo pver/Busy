@@ -97,6 +97,20 @@ module MatchRules =
 
     let MessageAppliesToRule (message:DBusMessage) rule =
         let matches (messageValue:'a) (ruleValue:'a option) = match ruleValue with Some y -> y = messageValue | None -> true
+        let matchesOption (messageValue:'a option) (ruleValue:'a option) = 
+            match (messageValue, ruleValue) with 
+            | Some m, Some r -> m = r
+            | None, Some _ -> false
+            | _, None -> true
+
+        let pathMatches = match (message.HeaderFields.ObjectPath, rule.Path) with
+                          | _, None -> true
+                          | None, Some(_) -> false
+                          | Some messagePath, Some (Path rulePath) -> messagePath = rulePath
+                          | Some messagePath, Some (PathNamespace pn) -> messagePath.StartsWith(pn)
 
         matches message.MessageType rule.Type
-        
+        && matchesOption message.HeaderFields.Interface rule.Interface
+        && matchesOption message.HeaderFields.Member rule.Member
+        && matchesOption message.HeaderFields.Sender rule.Sender
+        && pathMatches
