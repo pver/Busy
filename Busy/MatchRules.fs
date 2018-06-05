@@ -113,4 +113,6 @@ module MatchRules =
         && matchesOption message.HeaderFields.Interface rule.Interface
         && matchesOption message.HeaderFields.Member rule.Member
         && matchesOption message.HeaderFields.Sender rule.Sender
+        && matchesOption message.HeaderFields.Destination rule.Destination
         && pathMatches
+        // todo: compare args and argpaths
