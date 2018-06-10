@@ -1,5 +1,6 @@
 namespace Busy
 open MessageTypes
+open System
 
 module Utilities =
         open System.Text.RegularExpressions
@@ -12,8 +13,15 @@ module Utilities =
             member __.ReturnFrom x = x
             member __.Return x = Ok x
             
-        let internal result = ResultBuilder()
+        [<System.Runtime.InteropServices.DllImport("libc", SetLastError = true)>]
+        extern uint32 internal geteuid()
 
+        let internal result = ResultBuilder()
+        let internal getExternalUserId() = 
+            match System.Environment.OSVersion.Platform with 
+            | PlatformID.MacOSX | PlatformID.Unix -> string(geteuid())
+            | _ -> System.Security.Principal.WindowsIdentity.GetCurrent().User.Value
+            
         let IsValidObjectPath path = 
             match path with
             | "" | null -> false

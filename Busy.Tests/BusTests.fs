@@ -58,9 +58,7 @@ let busTests =
       
             let mutable actualMessageEventArgs = None
             let messageReceivedEventHandler = 
-                (fun (eventArgs:DBusMessageReceivedEventArgs) -> 
-                    printfn "GOT MESSAGE: %A" eventArgs
-                    actualMessageEventArgs<-Some(eventArgs) )
+                (fun (eventArgs:DBusMessageReceivedEventArgs) -> actualMessageEventArgs<-Some(eventArgs) )
 
             let itransport = fakeTransportWithMessage msg
 

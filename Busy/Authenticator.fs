@@ -37,7 +37,7 @@ module Authenticator =
     // all types of authenticators here (TODO: inject them? or limit to this fixed list of supported authenticators?)
     let private supportedAuthenticators() = 
         [
-            new ExternalDBusAuthenticator("0") // user id 0 (=root) TODO: replace with actual user id (platform specific!)
+            new ExternalDBusAuthenticator(Utilities.getExternalUserId()) // user id 0 (=root) TODO: replace with actual user id (platform specific!)
         ] |> List.map (fun x-> x :> IDBusAauthenticator)
 
     // Todo: should this return a new IAuthenticatedTransport here? 
