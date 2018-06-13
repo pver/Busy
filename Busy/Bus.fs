@@ -63,7 +63,13 @@ type Bus (transport:ITransport) =
     member this.IterateMessage () =
             let message = Unmarshalling.unmarshallMessage transport
             match message with
-            | Ok m -> dbusMessageReceived.Trigger [|this; DBusMessageReceivedEventArgs(m)|]
+            | Ok m -> 
+                        dbusMessageReceived.Trigger [|this; DBusMessageReceivedEventArgs(m)|]
+                        // proposal: pass to messageProcessor
+                        // let resultMessage = _messageProcessor.Process incomingMessage
+                        // match resultMessage with
+                        // | None -> ()
+                        // | Some(result) -> sendMessage result
             | Error _ -> () // Todo: expose through logging or other Error event?
             
     interface IBus with 
