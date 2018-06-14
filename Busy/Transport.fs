@@ -38,14 +38,19 @@ module Transport =
         let write (bytes:byte[]) =
             match stream with
             | Some s -> s.Write(bytes, 0, bytes.Length)
+                        s.Flush()
             | None -> ()
 
         let read (length:int) =
-            match stream with
-            | Some s -> let buffer = Array.create length 0uy
-                        s.Read (buffer, 0, length) |> ignore
-                        buffer
-            | None -> [||]
+            if (length <= 0) 
+            then
+                [||]
+            else
+                match stream with
+                | Some s -> let buffer = Array.create length 0uy
+                            s.Read (buffer, 0, length) |> ignore
+                            buffer
+                | None -> [||]
 
         do
             connect()
