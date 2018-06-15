@@ -96,8 +96,8 @@ let matchesRuleTest name message rule expectedResult =
           let actualResult = MessageAppliesToRule message rule
           Expect.equal actualResult expectedResult name
 
-let signalMessage = Busy.MessageFactory.CreateSignal 112u "/my/object/path" "my.interface" "signalMember" [] (Some ":1.14") (Some ":1.456")
-let methodCallMessage = Busy.MessageFactory.CreateMethodCall 123u "/org/freedesktop/DBus" (Some "org.freedesktop.DBus") "ListNames" [||] (Some ":1.8") (Some "org.freedesktop.DBus") 
+let signalMessage = Busy.MessageFactory.CreateSignal "/my/object/path" "my.interface" "signalMember" [] (Some ":1.14") (Some ":1.456")
+let methodCallMessage = Busy.MessageFactory.CreateMethodCall "/org/freedesktop/DBus" (Some "org.freedesktop.DBus") "ListNames" [||] (Some ":1.8") (Some "org.freedesktop.DBus") 
 
 let signalMessageExactMatchRule = {
     MatchAllRule with 

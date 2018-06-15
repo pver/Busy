@@ -29,9 +29,8 @@ let testValueMarshalling (value:DBusValue) (expectedLittleEndian:byte[]) (expect
       | Error e -> Expect.isOk unmarshalledBig e
       | Ok (unmarshalledValue, _) -> Expect.equal unmarshalledValue value <| sprintf "%A  as big endian bytes should be unmarshalled correctly" value
 
-// let sortMessageHeaderFields message =
-//   //{message with HeaderFields = (message.HeaderFields |> Array.sortBy (fun x -> x.FieldCode) )}
-//   message
+let setSequenceNumber (n:uint32) (msg:DBusMessage) =
+  {msg with SequenceNumber=n}
 
 [<Tests>]
 let tests =
@@ -163,7 +162,9 @@ let tests =
     testCase "signal 'owner changed' marshalling should result in correct byte representation" <| fun _ ->
 
       let messageBody = [|(Primitive <| String ":1.1")|]
-      let expectedMessage = Busy.MessageFactory.CreateSignal 2ul "/org/freedesktop/DBus" "org.freedesktop.DBus" "NameAcquired" messageBody (Some "org.freedesktop.DBus") (Some ":1.1")
+      let expectedMessage = 
+        Busy.MessageFactory.CreateSignal "/org/freedesktop/DBus" "org.freedesktop.DBus" "NameAcquired" messageBody (Some "org.freedesktop.DBus") (Some ":1.1")
+        |> setSequenceNumber 2ul
       
       // use filewriter = new BinaryWriter(File.Open("testfile.bin", FileMode.Create))
       // filewriter.Write(bytesLittleEndian)
@@ -206,7 +207,9 @@ let tests =
 
     testCase "method call 'list names' marshalling should result in correct byte representation" <| fun _ ->
       let messageBody = [||]
-      let expectedMessage = Busy.MessageFactory.CreateMethodCall 2ul "/org/freedesktop/DBus" (Some "org.freedesktop.DBus") "ListNames" messageBody (Some ":1.8") (Some "org.freedesktop.DBus") 
+      let expectedMessage = 
+        Busy.MessageFactory.CreateMethodCall "/org/freedesktop/DBus" (Some "org.freedesktop.DBus") "ListNames" messageBody (Some ":1.8") (Some "org.freedesktop.DBus") 
+        |> setSequenceNumber 2ul
 
       // bytes as sent by the daemon when aqcuiring name
       let expectedBytesLittleEndian = [|
@@ -243,7 +246,9 @@ let tests =
     testCase "method return 'list names' marshalling should result in correct byte representation" <| fun _ ->
       let messageBody = [|Array (PrimitiveType StringType,
                            [|Primitive (String "org.freedesktop.DBus"); Primitive (String ":1.8")|])|];
-      let expectedMessage = Busy.MessageFactory.CreateMethodReturn 3ul 2ul messageBody (Some "org.freedesktop.DBus") (Some ":1.8")
+      let expectedMessage = 
+        Busy.MessageFactory.CreateMethodReturn 2ul messageBody (Some "org.freedesktop.DBus") (Some ":1.8")
+        |> setSequenceNumber 3ul
                             
       // bytes as sent by the daemon when aqcuiring name
       let expectedBytesLittleEndian = [|
@@ -276,7 +281,9 @@ let tests =
 
     testCase "method error 'list names' marshalling should result in correct byte representation" <| fun _ ->
       let messageBody = [|Primitive (String "org.freedesktop.DBus does not understand message ListName")|];
-      let expectedMessage = Busy.MessageFactory.CreateError 3ul 2ul "org.freedesktop.DBus.Error.UnknownMethod" messageBody (Some "org.freedesktop.DBus") (Some ":1.6")
+      let expectedMessage = 
+        Busy.MessageFactory.CreateError 2ul "org.freedesktop.DBus.Error.UnknownMethod" messageBody (Some "org.freedesktop.DBus") (Some ":1.6")
+        |> setSequenceNumber 3ul
       
       // bytes as sent by the daemon when aqcuiring name
       let expectedBytesLittleEndian = [|

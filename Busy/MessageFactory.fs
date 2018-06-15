@@ -1,10 +1,17 @@
 namespace Busy
 
 open MessageTypes
+open System
 
 [<AbstractClass; Sealed>]
 type MessageFactory () = 
-
+        static let sequenceNumberLock = new Object()
+        static let mutable sequenceNumber:UInt32 = 0u
+        static let nextSequenceNumber() = 
+            lock sequenceNumberLock (
+                fun () -> sequenceNumber <- sequenceNumber + 1u
+                          sequenceNumber
+            )
         static let systemEndianness = 
             match System.BitConverter.IsLittleEndian with
             | true -> DBusMessageEndianness.LittleEndian 
@@ -30,41 +37,41 @@ type MessageFactory () =
                 Destination = destination
             }
 
-        static let createMessage endianness messageType flags body sequenceNumber fields =
+        static let createMessage endianness messageType flags body fields =
             {
                 Endianness = endianness;
                 MessageType = messageType;
                 Flags = flags;
                 Body = body;
-                SequenceNumber = sequenceNumber;
+                SequenceNumber = (nextSequenceNumber())
                 HeaderFields = fields;
             }
 
-        static member CreateSignal (sequenceNumber:uint32) (objectPath:string) (iface:string) (_member:string) (body:DBusMessageBody) (sender:Option<string>) (destination:Option<string>) = 
+        static member CreateSignal (objectPath:string) (iface:string) (_member:string) (body:DBusMessageBody) (sender:Option<string>) (destination:Option<string>) = 
             let flags = [| DBusMessageFlag.NoReplyExpected |];
             let headerFields = createMessageHeaderFields body (Some objectPath) (Some iface) (Some _member) None None sender destination
             let messageType = DBusMessageType.Signal
             
-            createMessage systemEndianness messageType flags body sequenceNumber headerFields
+            createMessage systemEndianness messageType flags body headerFields
 
         /// interface is optional for method calls, but recommended
-        static member  CreateMethodCall (sequenceNumber:uint32) (objectPath:string) (iface:Option<string>) (_member:string) (body:DBusMessageBody) (sender:Option<string>) (destination:Option<string>) = 
+        static member  CreateMethodCall (objectPath:string) (iface:Option<string>) (_member:string) (body:DBusMessageBody) (sender:Option<string>) (destination:Option<string>) = 
             let flags = [| |];
             let headerFields = createMessageHeaderFields body (Some objectPath) iface (Some _member) None None sender destination
             let messageType = DBusMessageType.MethodCall
 
-            createMessage systemEndianness messageType flags body sequenceNumber headerFields
+            createMessage systemEndianness messageType flags body headerFields
 
-        static member CreateError (sequenceNumber:uint32) (replySerial:uint32) (errorName:string) (body:DBusMessageBody) (sender:Option<string>) (destination:Option<string>) = 
+        static member CreateError (replySerial:uint32) (errorName:string) (body:DBusMessageBody) (sender:Option<string>) (destination:Option<string>) = 
             let flags = [| DBusMessageFlag.NoReplyExpected |];
             let headerFields = createMessageHeaderFields body None None None (Some errorName) (Some replySerial) sender destination
             let messageType = DBusMessageType.Error
 
-            createMessage systemEndianness messageType flags body sequenceNumber headerFields
+            createMessage systemEndianness messageType flags body headerFields
 
-        static member CreateMethodReturn (sequenceNumber:uint32) (replySerial:uint32) (body:DBusMessageBody) (sender:Option<string>) (destination:Option<string>) = 
+        static member CreateMethodReturn (replySerial:uint32) (body:DBusMessageBody) (sender:Option<string>) (destination:Option<string>) = 
             let flags = [| DBusMessageFlag.NoReplyExpected |];
             let headerFields = createMessageHeaderFields body None None None None (Some replySerial) sender destination
             let messageType = DBusMessageType.MethodReturn
 
-            createMessage systemEndianness messageType flags body sequenceNumber headerFields
+            createMessage systemEndianness messageType flags body headerFields
