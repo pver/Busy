@@ -17,6 +17,7 @@
     <Compile Include="UnixDomainSocketTests.fs" />
     <Compile Include="AuthenticatorTests.fs" />
     <Compile Include="MatchRulesTests.fs" />
+    <Compile Include="MessageProcessorTests.fs" />
     <Compile Include="BusTests.fs" />
     <Compile Include="Main.fs" />
     <None Include="App.config" />

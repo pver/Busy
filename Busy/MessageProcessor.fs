@@ -60,16 +60,13 @@ type MessageProcessor() =
 
     member __.Process(message:DBusMessage):Option<DBusMessage> =
         match message.MessageType with
-        | DBusMessageType.Invalid -> 
-            printfn "--> Invalid message received:"
-            printfn "%A" message
-            None
+        | DBusMessageType.Invalid -> None
         | DBusMessageType.MethodCall ->
             printfn "--> Method call received:"
             printfn "%A" message
             // Todo:
             // get registered objects from _bus, invoke method and return result msg (even when void method!!)
-            // result = _bus.RegisteredObjects[msg.objectpaht].Invoke(msg.body)
+            // result = _bus.RegisteredObjects[msg.objectpath].Invoke(msg.body)
             // Some(result)
             None
         | DBusMessageType.MethodReturn ->
@@ -77,24 +74,21 @@ type MessageProcessor() =
                               |> Seq.tryFind (fun x -> x.Matches message)
             match pendingCall with
             | Some pc -> 
-                Console.WriteLine("--> Method return received! Returning to client");
+                // --> Method return received! Returning to client
                 pendingCalls.Remove pc |> ignore
                 pc.Completed message
-            | None -> 
-                printfn "--> Method return received, but noone is waiting for it:"
-                printfn "%A" message
+            | None -> () //Method return received, but noone is waiting for it:"
             None
         | DBusMessageType.Error ->
             let pendingCall = pendingCalls 
                               |> Seq.tryFind (fun x -> x.Matches message)
             match pendingCall with
             | Some pc -> 
-                Console.WriteLine("--> Method error return received! Returning to client");
+                // --> Method error return received! Returning to client
                 pendingCalls.Remove pc |> ignore
                 pc.Completed message
-            | None -> 
-                printfn "--> Method error return received, but noone is waiting for it (anymore?):"
-                printfn "%A" message
+            | None -> () // --> Method error return received, but noone is waiting for it (anymore?) or this is a generic error for instance because the bus couldn't process a signal
+                      //.. Todo: should we raise it somehow (as event/exception?)
             None
         | DBusMessageType.Signal ->
             printfn "--> Signal received, sending to handlers"
