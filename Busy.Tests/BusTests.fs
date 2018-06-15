@@ -37,7 +37,7 @@ let busTests =
 
 
         testCase "SendMessage should send correct msg bytes to transport" <| fun _ ->
-            let msg = Busy.MessageFactory.CreateSignal 2ul 
+            let msg = Busy.MessageFactory.CreateSignal 
                         "/org/freedesktop/DBus" "org.freedesktop.DBus" "NameAcquired" 
                         [|(Primitive <| String ":1.1")|] (Some "org.freedesktop.DBus") (Some ":1.1")
             
@@ -52,7 +52,7 @@ let busTests =
             Expect.equal actualBytes expectedBytes "Bus should send correct message bytes to ITransport"
 
         testCase "IterMessage should send transport retrieved message event" <| fun _ ->
-            let msg = Busy.MessageFactory.CreateSignal 2ul 
+            let msg = Busy.MessageFactory.CreateSignal 
                         "/org/freedesktop/DBus" "org.freedesktop.DBus" "NameAcquired" 
                         [|(Primitive <| String ":1.1")|] (Some "org.freedesktop.DBus") (Some ":1.1")
       
