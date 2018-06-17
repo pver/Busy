@@ -62,8 +62,7 @@ type MessageProcessor() =
         match message.MessageType with
         | DBusMessageType.Invalid -> None
         | DBusMessageType.MethodCall ->
-            printfn "--> Method call received:"
-            printfn "%A" message
+            // --> Incoming method call received
             // Todo:
             // get registered objects from _bus, invoke method and return result msg (even when void method!!)
             // result = _bus.RegisteredObjects[msg.objectpath].Invoke(msg.body)
@@ -91,7 +90,7 @@ type MessageProcessor() =
                       //.. Todo: should we raise it somehow (as event/exception?)
             None
         | DBusMessageType.Signal ->
-            printfn "--> Signal received, sending to handlers"
+            // --> Signal received, sending to handlers"
             signalHandlers 
             |> Seq.filter (fun x -> x.Handles message)
             |> Seq.iter (fun x -> x.Invoke message)

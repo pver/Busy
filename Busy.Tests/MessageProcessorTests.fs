@@ -46,4 +46,21 @@ let messageProcessorTests =
             let pendingCall = processor.AddPendingCall methodCallSequenceNumber
             processor.Process methodError |> fun x -> Expect.equal x None "processing method error result should not send back any message to dbus so should be None"
             Expect.equal (pendingCall.Result) (Ok methodError) "Processor should deliver method error result to PendingCall"
+
+        testCase "Processor should not fail on method return with no PendingCall" <| fun _ ->
+            let processor = new MessageProcessor()
+            
+            let methodCallSequenceNumber = 123u
+            let methodReply = MessageFactory.CreateMethodReturn methodCallSequenceNumber [||] None None
+
+            Expect.equal (processor.Process methodReply) None "processing method reply should not send back any message to dbus so should be None"
+
+        testCase "Processor should not fail on method error result with no PendingCall" <| fun _ ->
+            let processor = new MessageProcessor()
+            
+            let methodCallSequenceNumber = 123u
+            let methodError = MessageFactory.CreateError methodCallSequenceNumber "Some error description" [||] None None
+
+            Expect.equal (processor.Process methodError) None "processing method error result should not send back any message to dbus so should be None"
+
     ]
