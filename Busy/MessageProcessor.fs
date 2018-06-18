@@ -4,6 +4,7 @@ open Busy.MessageTypes
 open System.Threading
 open System
 open Busy.MatchRules
+open Busy
 
 // Todo: add timeout (overloads) here for Wait methods, might require refactoring of Result to indicate timeout errors
 type PendingCall (sequenceNumber:uint32) =
@@ -67,7 +68,11 @@ type MessageProcessor() =
             // get registered objects from _bus, invoke method and return result msg (even when void method!!)
             // result = _bus.RegisteredObjects[msg.objectpath].Invoke(msg.body)
             // Some(result)
-            None
+
+            // Freedesktop lists several wellknown errors: https://www.freedesktop.org/wiki/Software/DBusBindingErrors/
+            let err = MessageFactory.CreateError message.SequenceNumber "org.freedesktop.DBus.Error.UnknownMethod" [||] None None
+            Some err
+            
         | DBusMessageType.MethodReturn ->
             let pendingCall = pendingCalls 
                               |> Seq.tryFind (fun x -> x.Matches message)
@@ -78,6 +83,7 @@ type MessageProcessor() =
                 pc.Completed message
             | None -> () //Method return received, but noone is waiting for it:"
             None
+
         | DBusMessageType.Error ->
             let pendingCall = pendingCalls 
                               |> Seq.tryFind (fun x -> x.Matches message)
@@ -89,6 +95,7 @@ type MessageProcessor() =
             | None -> () // --> Method error return received, but noone is waiting for it (anymore?) or this is a generic error for instance because the bus couldn't process a signal
                       //.. Todo: should we raise it somehow (as event/exception?)
             None
+
         | DBusMessageType.Signal ->
             // --> Signal received, sending to handlers"
             signalHandlers 
@@ -96,4 +103,5 @@ type MessageProcessor() =
             |> Seq.iter (fun x -> x.Invoke message)
 
             None
+            
         | _ -> None

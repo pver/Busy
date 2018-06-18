@@ -77,7 +77,9 @@ type Bus (transport:ITransport) =
 
                         let resultMessage = messageProcessor.Process m
                         match resultMessage with
-                        | Some result -> this.SendMessage result
+                        | Some result -> 
+                            // Todo: don't send when NO_REPLY_EXPECTED flag is set on incoming message!!
+                            this.SendMessage result
                         | None -> ()
 
             | Error _ -> () // Todo: expose through logging or other Error event?
