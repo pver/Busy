@@ -5,7 +5,7 @@ D-Bus protocol specification: https://dbus.freedesktop.org/doc/dbus-specificatio
 
 Very much a work in progress: don't use it yet.. :-)
 
-### Designing you D-Bus api
+### Designing your D-Bus api
 Nice article about D-Bus api design: https://dbus.freedesktop.org/doc/dbus-api-design.html
 
 
