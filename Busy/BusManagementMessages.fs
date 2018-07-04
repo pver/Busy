@@ -2,13 +2,16 @@ namespace Busy
 
 // Internal for now, could be exposes in a proper way (for instance when requesting names on bus)
 module internal BusManagementMessages = 
-    let internal dbusManagmentDestinationOwnerName = "org.freedesktop.DBus";
-    let internal dbusManagmentInterfaceName = "org.freedesktop.DBus";
-    let internal dbusManagmentObjectPath = "/org/freedesktop/DBus";
+    [<Literal>]
+    let internal DBusManagmentDestinationOwnerName = "org.freedesktop.DBus";
+    [<Literal>]
+    let internal DBusManagmentInterfaceName = "org.freedesktop.DBus";
+    [<Literal>]
+    let internal DBusManagmentObjectPath = "/org/freedesktop/DBus";
 
     let internal createMessage memberName body =
-        MessageFactory.CreateMethodCall dbusManagmentObjectPath (Some dbusManagmentInterfaceName) memberName
-            body None (Some dbusManagmentDestinationOwnerName)
+        MessageFactory.CreateMethodCall DBusManagmentObjectPath (Some DBusManagmentInterfaceName) memberName
+            body None (Some DBusManagmentDestinationOwnerName)
 
     let internal createHello () = createMessage "Hello" [||]
 
