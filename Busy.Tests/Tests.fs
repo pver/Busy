@@ -30,6 +30,10 @@ let tests =
       let subject = IsValidObjectPath String.Empty
       Expect.isFalse subject "Empty object path is not a valid path"
 
+    testCase "null object path is invalid" <| fun _ ->
+      let subject = IsValidObjectPath String.Empty
+      Expect.isFalse subject "Null object path is not a valid path"
+
     testCase "object path without leading / is invalid" <| fun _ ->
       let subject = IsValidObjectPath "my/example"
       Expect.isFalse subject "Object path must begin with a leading /"
