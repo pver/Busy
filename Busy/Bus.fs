@@ -50,6 +50,7 @@ type Bus (transport:ITransport) =
         Transport.FromAddress(dbusAddress)
         |> Result.mapError (fun e -> { CreateBusErrorMessage="Could not create transport from address"; CreateBusInnerError= Some(TransportError e) })
         |> Result.bind (fun transport -> 
+                                            transport.Connect()
                                             Authenticator.Authenticate(transport) // Todo: add authenticators to use in a List in CreateBusOptions? This way users can pass in custom authenticators
                                             |> Result.mapError (fun e -> { CreateBusErrorMessage="Could not successfully authenticate"; CreateBusInnerError= Some(AuthenticationError e) })
                                             |> Result.map (fun authId -> 

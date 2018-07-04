@@ -5,16 +5,18 @@ open Busy.Transport
 open Busy.Authenticator
 
 let private failAllAuthenticationsTransport() = { new ITransport with
-     member __.Close() = ()
-     member __.Write _ = () 
-     member __.ReadBytes _ = formatCommand "REJECTED"
-     }
+    member __.Connect() = ()
+    member __.Close() = ()
+    member __.Write _ = () 
+    member __.ReadBytes _ = formatCommand "REJECTED"
+    }
 
 let private acceptAllAuthenticationsTransport (authId:string) = { new ITransport with
-     member __.Close() = ()
-     member __.Write _ = () 
-     member __.ReadBytes _ = formatCommand <| sprintf "OK %s" authId
-     }
+    member __.Connect() = ()
+    member __.Close() = ()
+    member __.Write _ = () 
+    member __.ReadBytes _ = formatCommand <| sprintf "OK %s" authId
+    }
 
 [<Tests>]
 let tests =

@@ -10,6 +10,7 @@ module Transport =
 
     type ITransport =
         inherit IByteProvider
+        abstract member Connect: unit -> unit
         abstract member Close: unit -> unit
         abstract member Write: byte[] -> unit
 
@@ -52,10 +53,8 @@ module Transport =
                             buffer
                 | None -> [||]
 
-        do
-            connect()
-
         interface ITransport with
+            member __.Connect() = connect()
             member __.Close() = disconnect()
             member __.Write bytes = write bytes
             member __.ReadBytes length = read length

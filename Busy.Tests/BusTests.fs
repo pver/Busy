@@ -12,6 +12,7 @@ open System.Threading
 let byteBasedTransport bytes =
     let arrayByteProvider = ArrayByteProvider bytes :> IByteProvider
     { new ITransport with
+        member __.Connect() = ()
         member __.Close () = ()
         member __.Write (_:byte[]) = ()
         member __.ReadBytes count = arrayByteProvider.ReadBytes count }
@@ -22,6 +23,7 @@ let fakeTransportWithMessage msg =
 
 let fakeRecordingTransport (recordedBytes:System.Collections.Generic.List<byte>) = 
     { new ITransport with
+        member __.Connect() = ()
         member __.Close () = ()
         member __.Write (bytes:byte[]) = recordedBytes.AddRange bytes
         member __.ReadBytes _ = [||]}
@@ -33,6 +35,7 @@ let fakeRecordingTransportWithMessageReply (recordedBytes:System.Collections.Gen
     let responseGate = new ManualResetEventSlim()
 
     { new ITransport with
+        member __.Connect() = ()
         member __.Close () = ()
         member __.Write (bytes:byte[]) = 
             recordedBytes.AddRange bytes
@@ -48,6 +51,7 @@ let busTests =
         testCase "IBus.Transport should return passed in ITransport" <| fun _ ->
             
             let itransport = { new ITransport with
+                                    member __.Connect() = ()
                                     member __.Close () = ()
                                     member __.Write (_:byte[]) = ()
                                     member __.ReadBytes _ = failwith "nothing to read here" }
