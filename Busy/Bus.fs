@@ -3,6 +3,7 @@ namespace Busy
 open Address
 open Transport
 open MessageTypes
+open BusManagementMessages
 open Busy.MessageProcessing
 
 type KnownBus =
@@ -34,28 +35,37 @@ type IBus =
     [<CLIEvent>]
     abstract member DBusMessageReceived: IDelegateEvent<System.EventHandler<DBusMessageReceivedEventArgs>>
 
+type CreateBusOptions = {SendHello:bool}
 
 type Bus (transport:ITransport) = 
     let dbusMessageReceived = new DelegateEvent<System.EventHandler<DBusMessageReceivedEventArgs>>()
     
-    let messageProcessor = new MessageProcessor() // Todo: make this in interface so user could inject alternative messageProcessor?
+    let messageProcessor = new MessageProcessor() // Todo: make this an interface so user could inject alternative messageProcessor?
 
     static let getKnownBusAddress knownBus =
         match knownBus with
         | SystemBus -> Environment.SystemBusAddress()
 
-    static member Create (dbusAddress:DBusAddress) =
+    static member Create (dbusAddress:DBusAddress) (createOptions:CreateBusOptions) =
         Transport.FromAddress(dbusAddress)
         |> Result.mapError (fun e -> { CreateBusErrorMessage="Could not create transport from address"; CreateBusInnerError= Some(TransportError e) })
         |> Result.bind (fun transport -> 
-                                            Authenticator.Authenticate(transport)
+                                            Authenticator.Authenticate(transport) // Todo: add authenticators to use in a List in CreateBusOptions? This way users can pass in custom authenticators
                                             |> Result.mapError (fun e -> { CreateBusErrorMessage="Could not successfully authenticate"; CreateBusInnerError= Some(AuthenticationError e) })
-                                            |> Result.map (fun authId -> Bus(transport) :> IBus)
+                                            |> Result.map (fun authId -> 
+                                                                        // Todo: create an AuthenticatedTransport wrapper containing the authId?
+                                                                        let bus = Bus(transport) :> IBus
+                                                                         
+                                                                        if createOptions.SendHello 
+                                                                        then createHello() |> bus.SendMessage // Todo: catch error from daemon?
+                                                                         
+                                                                        bus
+                                                                        ) 
                                             )
         
     static member CreateKnownBus knownBus =
         match getKnownBusAddress knownBus with
-        | ValidAddress a -> Bus.Create(a) 
+        | ValidAddress address -> Bus.Create address {SendHello=true}
         | InvalidAddress a -> Error { CreateBusErrorMessage="Could not retrieve a valid address"; CreateBusInnerError= Some(AddressError a) }
         | _ -> failwith "not implemented yet"
     
@@ -84,15 +94,19 @@ type Bus (transport:ITransport) =
 
             | Error _ -> () // Todo: expose through logging or other Error event?
 
-    member __.AddSignalHandler(handler) =
-        // Todo: create and send AddMatch from here!!
-        // SendAndWait(addMatchMessage(handler.MatchRule))
+    member this.AddSignalHandler(handler) =
+        // Todo: check if it's not already added, in that case don't send AddMatch to daemon!
+        
         messageProcessor.AddSignalHandler handler
+        
+        createAddMatch handler.MatchRule |> this.SendMessage // Todo: block? what to do with an error?
     
-    member __.RemoveSignalHandler(handler) =
-        // Todo: create and send AddMatch from here!!
-        // SendAndWait(removeMatchMessage(handler.MatchRule))
+    member this.RemoveSignalHandler(handler) =
+        // Todo: check if it's not already removed or if other handlers still need it, in that case don't send remove to daemon!
+
         messageProcessor.RemoveSignalHandler handler
+
+        createRemoveMatch handler.MatchRule |> this.SendMessage // Todo: block? what to do with an error?
 
     // Todo: add timeout support!!
     member this.SendAndWait(message:DBusMessage) : Result<DBusMessage, string> =

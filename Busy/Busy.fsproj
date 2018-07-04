@@ -21,6 +21,7 @@
     <Compile Include="Authenticator.fs" />
     <Compile Include="MatchRules.fs" />
     <Compile Include="MessageProcessor.fs" />
+    <Compile Include="BusManagementMessages.fs" />
     <Compile Include="Bus.fs" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />

@@ -34,7 +34,8 @@ module Authenticator =
         let completedState = checkStateTillCompleted <| authenticator.Start() 
         completedState
 
-    // all types of authenticators here (TODO: inject them? or limit to this fixed list of supported authenticators?)
+    // all types of authenticators here (TODO: inject them, for instance in the Authenticate method and passed in from CreateBusOptions? 
+    // or limit to this fixed list of supported authenticators?)
     let private supportedAuthenticators() = 
         [
             new ExternalDBusAuthenticator(Utilities.getExternalUserId()) // user id 0 (=root) TODO: replace with actual user id (platform specific!)
@@ -60,7 +61,3 @@ module Authenticator =
         | Ok _ -> 
             sendCommand transport "BEGIN"
             authenticationResult
-
-        // Todo: call org.freedesktop.DBus.Hello, but higher up in the API, not here in connect + do this optional (BusSession type?), 
-        // because not every dbus session types requires this 
-        // object path = /org/freedesktop/DBus
