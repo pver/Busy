@@ -1,10 +1,26 @@
 namespace Busy.MessageProcessing
 
-open Busy.MessageTypes
-open System.Threading
-open System
-open Busy.MatchRules
 open Busy
+open Busy.MatchRules
+open Busy.MessageTypes
+
+open System
+open System.Collections.Generic
+open System.Threading
+
+// Wrapper to easily convert from F# fun to Func
+type ExportedMethodHandler (methodHandler:Func<DBusMessage,DBusMessage>) =
+    member __.Invoke(message:DBusMessage) =
+        methodHandler.Invoke message
+
+// Todo: add attributes for auto-introspect info generation? 
+// "Method, interface, property, signal, and argument elements may have 'annotations'"
+type ExportedSignal = { MemberName:string }
+type ExportedMethod = { MemberName:string; MethodHandler:ExportedMethodHandler } // Todo: add argument(s) info for introspection
+type ExportedProperty = { MemberName:string; MethodHandler:ExportedMethodHandler }
+
+type ExportedInterface = { InterfaceName:string; Methods:ExportedMethod[]; Properties:ExportedProperty[]; Signals:ExportedSignal[]}
+type ExportedObject = { ObjectPath:string; Interfaces:ExportedInterface[] } // Todo: support nested objects (inside or by sharing a common ObjectPath part?)
 
 // Todo: add timeout (overloads) here for Wait methods, might require refactoring of Result to indicate timeout errors
 type PendingCall (sequenceNumber:uint32) =
@@ -32,6 +48,7 @@ type PendingCall (sequenceNumber:uint32) =
         | None -> Error "no response received" // Todo: make this more typed
 
 // Todo: tighten this to accept only signal match rules (introduce SignalMatchRule that equals MatchRule but with a fixed MessageType=Signal?)
+// Wrapper to easily convert from F# fun to Action
 type SignalHandler (signalRule:MatchRule, signalHandler:Action<DBusMessage>) =
     member __.MatchRule = signalRule
 
@@ -45,14 +62,19 @@ type SignalHandler (signalRule:MatchRule, signalHandler:Action<DBusMessage>) =
 type MessageProcessor() =
     
     // Todo: Add locking on these collections!!!!
-    let signalHandlers = new System.Collections.Generic.List<SignalHandler>() // Replace by Dictionary for lookup by message sequence id for performance impr?
-    let pendingCalls = new System.Collections.Generic.List<PendingCall>()
+    let signalHandlers = new List<SignalHandler>() // Replace by Dictionary for lookup by message sequence id for performance impr?
+    let pendingCalls = new List<PendingCall>()
+    let exportedObjects = new Dictionary<string, ExportedObject>() // Replace by Dictionary for lookup by object path for performance impr?
 
     member __.AddSignalHandler(handler) =
         signalHandlers.Add handler
 
     member __.RemoveSignalHandler(handler) =
         signalHandlers.Remove handler |> ignore
+
+    // Todo: should this fail when an object with the same path was already exported? Or silently replace like now?
+    member __.AddExportedObject(exportedObject) =
+        exportedObjects.Add (exportedObject.ObjectPath, exportedObject)
 
     member __.AddPendingCall(sequenceNumber:uint32) =
         let call = new PendingCall(sequenceNumber)
@@ -64,14 +86,42 @@ type MessageProcessor() =
         | DBusMessageType.Invalid -> None
         | DBusMessageType.MethodCall ->
             // --> Incoming method call received
-            // Todo:
-            // get registered objects from _bus, invoke method and return result msg (even when void method!!)
-            // result = _bus.RegisteredObjects[msg.objectpath].Invoke(msg.body)
-            // Some(result)
 
             // Freedesktop lists several wellknown errors: https://www.freedesktop.org/wiki/Software/DBusBindingErrors/
-            let err = MessageFactory.CreateError message.SequenceNumber "org.freedesktop.DBus.Error.UnknownMethod" [||] None None
-            Some err
+            let returnError msg =
+                let err = MessageFactory.CreateError message.SequenceNumber msg [||] None None
+                Some err
+
+            let invokeOrReturnError (method:Option<ExportedMethod>) =
+                match method with
+                | None -> returnError "org.freedesktop.DBus.Error.UnknownMethod"
+                | Some m -> Some (m.MethodHandler.Invoke message)
+
+            match message.HeaderFields.ObjectPath with
+            | None -> returnError "org.freedesktop.DBus.Error.UnknownObject"
+            | Some objectPath ->
+                let (pathFound, exportedObject) = exportedObjects.TryGetValue objectPath
+
+                match pathFound with
+                | false -> returnError "org.freedesktop.DBus.Error.UnknownObject"
+                | true ->
+                    
+                    match message.HeaderFields.Interface with
+                    | None ->
+                        let method = exportedObject.Interfaces
+                                      |> Seq.collect (fun x -> Seq.filter (fun (m:ExportedMethod) -> Some(m.MemberName) = message.HeaderFields.Member) x.Methods )
+                                      |> Seq.tryHead
+                        invokeOrReturnError method
+                        
+                    | Some iface ->
+                        match exportedObject.Interfaces |> Seq.tryFind (fun x -> x.InterfaceName = iface) with
+                        | None -> returnError "org.freedesktop.DBus.Error.UnknownInterface"
+                        | Some i -> 
+                            let method = i.Methods
+                                      |> Seq.filter (fun (m:ExportedMethod) -> Some(m.MemberName) = message.HeaderFields.Member)
+                                      |> Seq.tryHead
+
+                            invokeOrReturnError method
             
         | DBusMessageType.MethodReturn ->
             let pendingCall = pendingCalls 

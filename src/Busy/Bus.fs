@@ -3,7 +3,7 @@ namespace Busy
 open Address
 open Transport
 open MessageTypes
-open BusManagementMessages
+open Busy.BusManagementMessages
 open Busy.MessageProcessing
 
 type KnownBus =
@@ -31,6 +31,9 @@ type IBus =
 
     abstract member AddSignalHandler: SignalHandler -> unit 
     abstract member RemoveSignalHandler: SignalHandler -> unit 
+
+    abstract member AddExportedObject: ExportedObject -> unit
+    // todo: should we need to remove exported objects as well?
 
     [<CLIEvent>]
     abstract member DBusMessageReceived: IDelegateEvent<System.EventHandler<DBusMessageReceivedEventArgs>>
@@ -95,19 +98,22 @@ type Bus (transport:ITransport) =
 
             | Error _ -> () // Todo: expose through logging or other Error event?
 
-    member this.AddSignalHandler(handler) =
+    member this.AddSignalHandler handler =
         // Todo: check if it's not already added, in that case don't send AddMatch to daemon!
         
         messageProcessor.AddSignalHandler handler
         
         createAddMatch handler.MatchRule |> this.SendMessage // Todo: block? what to do with an error?
     
-    member this.RemoveSignalHandler(handler) =
+    member this.RemoveSignalHandler handler =
         // Todo: check if it's not already removed or if other handlers still need it, in that case don't send remove to daemon!
 
         messageProcessor.RemoveSignalHandler handler
 
         createRemoveMatch handler.MatchRule |> this.SendMessage // Todo: block? what to do with an error?
+
+    member __.AddExportedObject exportedObject =
+        messageProcessor.AddExportedObject exportedObject
 
     // Todo: add timeout support!!
     member this.SendAndWait(message:DBusMessage) : Result<DBusMessage, string> =
@@ -123,5 +129,6 @@ type Bus (transport:ITransport) =
         member this.SendAndWait (message:DBusMessage) = this.SendAndWait message
         member this.AddSignalHandler (handler) = this.AddSignalHandler handler
         member this.RemoveSignalHandler (handler) = this.RemoveSignalHandler handler
+        member this.AddExportedObject (exportedObject) = this.AddExportedObject exportedObject
         [<CLIEvent>]
         member __.DBusMessageReceived = dbusMessageReceived.Publish
