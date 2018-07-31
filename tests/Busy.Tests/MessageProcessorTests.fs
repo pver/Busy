@@ -5,6 +5,8 @@ open Busy.MessageProcessing
 open Busy.MessageTypes
 open Busy
 
+let methodSender = (Some ":1.123")
+
 [<Tests>]
 let messageProcessorTests =
     testList "messageProcessorTests" [
@@ -91,13 +93,14 @@ let messageProcessorTests =
         testCase "Processor should return error on unexported object" <| fun _ ->
             let processor = new MessageProcessor()
             
-            let methodCall = MessageFactory.CreateMethodCall "/some/path" (Some "some.interface") "Member" [||] None None
+            let methodCall = MessageFactory.CreateMethodCall "/some/path" (Some "some.interface") "Member" [||] methodSender None
 
             let response = processor.Process methodCall 
             Expect.isSome response "Method call without any exported object should send result message"
             
             let msg = response.Value
             Expect.equal msg.MessageType DBusMessageType.Error "Method call without any exported object should generate error return"
+            Expect.equal msg.HeaderFields.Destination methodSender "Method result should be send to method caller"
             Expect.equal (msg.HeaderFields.ReplySerial) (Some methodCall.SequenceNumber) "Method call error should have call id as replyserial"
             Expect.equal (msg.HeaderFields.ErrorName) (Some "org.freedesktop.DBus.Error.UnknownObject") "Method call error should indicate UnknownObject"
 
@@ -105,7 +108,7 @@ let messageProcessorTests =
             let processor = new MessageProcessor()
             
             let methodCall = 
-                MessageFactory.CreateMethodCall "/some/path" (Some "some.interface") "Member" [||] None None
+                MessageFactory.CreateMethodCall "/some/path" (Some "some.interface") "Member" [||] methodSender None
                 |> fun x -> {x with HeaderFields = {x.HeaderFields with ObjectPath=None}} // api doesn't allow creating such a method call message, but incoming msg could be missing object path
 
             let response = processor.Process methodCall 
@@ -113,6 +116,7 @@ let messageProcessorTests =
             
             let msg = response.Value
             Expect.equal msg.MessageType DBusMessageType.Error "Method call without any exported object should generate error return"
+            Expect.equal msg.HeaderFields.Destination methodSender "Method result should be send to method caller"
             Expect.equal (msg.HeaderFields.ReplySerial) (Some methodCall.SequenceNumber) "Method call error should have call id as replyserial"
             Expect.equal (msg.HeaderFields.ErrorName) (Some "org.freedesktop.DBus.Error.UnknownObject") "Method call error should indicate UnknownObject"
 
@@ -122,13 +126,14 @@ let messageProcessorTests =
             let processor = new MessageProcessor()
             processor.AddExportedObject { ObjectPath=exportedPath; Interfaces=[||] }
 
-            let methodCall = MessageFactory.CreateMethodCall exportedPath (Some "some.interface") "Member" [||] None None
+            let methodCall = MessageFactory.CreateMethodCall exportedPath (Some "some.interface") "Member" [||] methodSender None
 
             let response = processor.Process methodCall 
             Expect.isSome response "Method call without unexported object interface should send result message"
             
             let msg = response.Value
             Expect.equal msg.MessageType DBusMessageType.Error "Method call without unexported object interface should generate error return"
+            Expect.equal msg.HeaderFields.Destination methodSender "Method result should be send to method caller"
             Expect.equal (msg.HeaderFields.ReplySerial) (Some methodCall.SequenceNumber) "Method call error should have call id as replyserial"
             Expect.equal (msg.HeaderFields.ErrorName) (Some "org.freedesktop.DBus.Error.UnknownInterface") "Method call error should indicate UnknownInterface"
 
@@ -140,13 +145,14 @@ let messageProcessorTests =
             processor.AddExportedObject { ObjectPath=exportedPath; 
                 Interfaces=[|{ InterfaceName=exportedInterface; Methods=[||]; Properties=[||]; Signals=[||]}|] }
 
-            let methodCall = MessageFactory.CreateMethodCall exportedPath (Some exportedInterface) "Member" [||] None None
+            let methodCall = MessageFactory.CreateMethodCall exportedPath (Some exportedInterface) "Member" [||] methodSender None
 
             let response = processor.Process methodCall 
             Expect.isSome response "Method call without unexported object interface method should send result message"
             
             let msg = response.Value
             Expect.equal msg.MessageType DBusMessageType.Error "Method call without unexported object interface should generate error return"
+            Expect.equal msg.HeaderFields.Destination methodSender "Method result should be send to method caller"
             Expect.equal (msg.HeaderFields.ReplySerial) (Some methodCall.SequenceNumber) "Method call error should have call id as replyserial"
             Expect.equal (msg.HeaderFields.ErrorName) (Some "org.freedesktop.DBus.Error.UnknownMethod") "Method call error should indicate UnknownMethod"
 
@@ -157,13 +163,14 @@ let messageProcessorTests =
             processor.AddExportedObject { ObjectPath=exportedPath; 
                 Interfaces=[|{ InterfaceName=exportedInterface; Methods=[||]; Properties=[||]; Signals=[||]}|] }
 
-            let methodCall = MessageFactory.CreateMethodCall exportedPath None "Member" [||] None None
+            let methodCall = MessageFactory.CreateMethodCall exportedPath None "Member" [||] methodSender None
 
             let response = processor.Process methodCall 
             Expect.isSome response "Method call without unexported object interface method should send result message"
             
             let msg = response.Value
             Expect.equal msg.MessageType DBusMessageType.Error "Method call without unexported object interface should generate error return"
+            Expect.equal msg.HeaderFields.Destination methodSender "Method result should be send to method caller"
             Expect.equal (msg.HeaderFields.ReplySerial) (Some methodCall.SequenceNumber) "Method call error should have call id as replyserial"
             Expect.equal (msg.HeaderFields.ErrorName) (Some "org.freedesktop.DBus.Error.UnknownMethod") "Method call error should indicate UnknownMethod"
 
@@ -179,13 +186,14 @@ let messageProcessorTests =
                         Methods=[|{ MemberName=exportedMember; MethodHandler=methodHandler}|]; Properties=[||]; Signals=[||]}
                     |] }
 
-            let methodCall = MessageFactory.CreateMethodCall exportedPath (Some exportedInterface) exportedMember [||] None None
+            let methodCall = MessageFactory.CreateMethodCall exportedPath (Some exportedInterface) exportedMember [||] methodSender None
 
             let response = processor.Process methodCall 
             Expect.isSome response "Method call with fully qualified object method should send result message"
             
             let msg = response.Value
             Expect.equal msg.MessageType DBusMessageType.MethodReturn "Succesfull method callshould generate method return"
+            Expect.equal msg.HeaderFields.Destination methodSender "Method result should be send to method caller"
             Expect.equal (msg.HeaderFields.ReplySerial) (Some methodCall.SequenceNumber) "Method return should have call id as replyserial"
             Expect.equal (msg.HeaderFields.ErrorName) None "Method return should have no errorname set"
             let msgResultValue = [|Types.DBusValue.Primitive (Types.DBusPrimitiveValue.String "resultValue")|]
@@ -204,13 +212,14 @@ let messageProcessorTests =
                         Methods=[|{ MemberName=exportedMember; MethodHandler=methodHandler}|]; Properties=[||]; Signals=[||]}
                     |] }
 
-            let methodCall = MessageFactory.CreateMethodCall exportedPath None exportedMember [||] None None
+            let methodCall = MessageFactory.CreateMethodCall exportedPath None exportedMember [||] methodSender None
 
             let response = processor.Process methodCall 
             Expect.isSome response "Method call with fully qualified object method should send result message"
             
             let msg = response.Value
             Expect.equal msg.MessageType DBusMessageType.MethodReturn "Succesfull method callshould generate method return"
+            Expect.equal msg.HeaderFields.Destination methodSender "Method result should be send to method caller"
             Expect.equal (msg.HeaderFields.ReplySerial) (Some methodCall.SequenceNumber) "Method return should have call id as replyserial"
             Expect.equal (msg.HeaderFields.ErrorName) None "Method return should have no errorname set"
             let msgResultValue = [|Types.DBusValue.Primitive (Types.DBusPrimitiveValue.String "resultValue")|]
@@ -222,7 +231,7 @@ let messageProcessorTests =
 
             Expect.isError call.Result "Uncompleted PendingCall should return Error result"
 
-        testCase "SignalHandler should keep passed in MatchRule" <| fun _ ->
+        testCase "SignalHandler should store the passed in MatchRule" <| fun _ ->
             let matchRule = 
                 { Busy.MatchRules.MatchAllRule with 
                     Interface=Some("some.interface")
@@ -230,5 +239,5 @@ let messageProcessorTests =
                     Path=Some( Busy.MatchRules.PathMatchRule.Path("/some/path") )}
 
             let signalHandler = new SignalHandler(matchRule, fun _ -> () )
-            Expect.equal signalHandler.MatchRule matchRule "SignalHandler should keep passed in MatchRule"
+            Expect.equal signalHandler.MatchRule matchRule "SignalHandler should store the passed in MatchRule"
     ]
