@@ -48,7 +48,7 @@ type MessageFactory () =
             }
 
         static member CreateSignal (objectPath:string) (iface:string) (_member:string) (body:DBusMessageBody) (sender:Option<string>) (destination:Option<string>) = 
-            let flags = [| DBusMessageFlag.NoReplyExpected |];
+            let flags = [| DBusMessageFlag.NoReplyExpected |]
             let headerFields = createMessageHeaderFields body (Some objectPath) (Some iface) (Some _member) None None sender destination
             let messageType = DBusMessageType.Signal
             
@@ -63,15 +63,29 @@ type MessageFactory () =
             createMessage systemEndianness messageType flags body headerFields
 
         static member CreateError (replySerial:uint32) (errorName:string) (body:DBusMessageBody) (sender:Option<string>) (destination:Option<string>) = 
-            let flags = [| DBusMessageFlag.NoReplyExpected |];
+            let flags = [| DBusMessageFlag.NoReplyExpected |]
             let headerFields = createMessageHeaderFields body None None None (Some errorName) (Some replySerial) sender destination
             let messageType = DBusMessageType.Error
 
             createMessage systemEndianness messageType flags body headerFields
 
+        /// Create an error message as a response to a given message. 
+        /// This will set correct reply serial, sender and destination information
+        static member CreateErrorForMessage (msg:DBusMessage) (errorName:string) (body:DBusMessageBody) = 
+            let sender = msg.HeaderFields.Destination
+            let destination = msg.HeaderFields.Sender
+            MessageFactory.CreateError msg.SequenceNumber errorName body sender destination
+
         static member CreateMethodReturn (replySerial:uint32) (body:DBusMessageBody) (sender:Option<string>) (destination:Option<string>) = 
-            let flags = [| DBusMessageFlag.NoReplyExpected |];
+            let flags = [| DBusMessageFlag.NoReplyExpected |]
             let headerFields = createMessageHeaderFields body None None None None (Some replySerial) sender destination
             let messageType = DBusMessageType.MethodReturn
 
             createMessage systemEndianness messageType flags body headerFields
+        
+        /// Create a method return message as a response to a given method call message. 
+        /// This will set correct reply serial, sender and destination information
+        static member CreateMethodReturnForMessage (msg:DBusMessage) (body:DBusMessageBody) = 
+            let sender = msg.HeaderFields.Destination
+            let destination = msg.HeaderFields.Sender
+            MessageFactory.CreateMethodReturn msg.SequenceNumber body sender destination

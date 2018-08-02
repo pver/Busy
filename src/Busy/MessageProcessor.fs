@@ -89,7 +89,7 @@ type MessageProcessor() =
 
             // Freedesktop lists several wellknown errors: https://www.freedesktop.org/wiki/Software/DBusBindingErrors/
             let returnError msg =
-                let err = MessageFactory.CreateError message.SequenceNumber msg [||] None message.HeaderFields.Sender
+                let err = MessageFactory.CreateErrorForMessage message msg [||]
                 Some err
 
             let invokeOrReturnError (method:Option<ExportedMethod>) =
