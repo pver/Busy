@@ -102,4 +102,13 @@ module rec Types =
                                         | ArrayType a -> sprintf "a%s" <| a.Signature
                                         | StructType s -> sprintf "(%s)" <| (s |> Seq.fold (fun acc x -> sprintf "%s%s" acc x.Signature) "")
                                         | VariantType -> "v"
-                                        | DictType (kt,vt) -> sprintf "{%s%s}" kt.Signature vt.Signature                                        
+                                        | DictType (kt,vt) -> sprintf "{%s%s}" kt.Signature vt.Signature   
+
+        type DBusTypeConversions = DBusTypeConversions with 
+                static member ($) (DBusTypeConversions, value: int) = DBusValue.Primitive(DBusPrimitiveValue.Int32 value)
+                static member ($) (DBusTypeConversions, value: int16) = DBusValue.Primitive(DBusPrimitiveValue.Int16 value)
+                static member ($) (DBusTypeConversions, value: string) = DBusValue.Primitive(DBusPrimitiveValue.String value)
+                // Todo: complete list of conversions!
+
+        /// Helper method to convert CLR types to supported DBus types
+        let inline ToDBus value = DBusTypeConversions $ value                                     
