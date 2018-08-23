@@ -4,6 +4,7 @@ open Expecto
 open Busy.MessageProcessing
 open Busy.MessageTypes
 open Busy
+open Busy.Types
 
 let methodSender = (Some ":1.123")
 
@@ -178,7 +179,7 @@ let messageProcessorTests =
             let exportedPath = "/some/path"
             let exportedInterface = "some.interface"
             let exportedMember = "Member"
-            let methodHandler = ExportedMethodHandler(fun msg -> MessageFactory.CreateMethodReturn msg.SequenceNumber [|Types.DBusValue.Primitive (Types.DBusPrimitiveValue.String "resultValue")|] None msg.HeaderFields.Sender)
+            let methodHandler = ExportedMethodHandler(fun msg -> MessageFactory.CreateMethodReturn msg.SequenceNumber [|ToDBus "resultValue"|] None msg.HeaderFields.Sender)
 
             let processor = new MessageProcessor()
             processor.AddExportedObject { ObjectPath=exportedPath; 
@@ -196,7 +197,7 @@ let messageProcessorTests =
             Expect.equal msg.HeaderFields.Destination methodSender "Method result should be send to method caller"
             Expect.equal (msg.HeaderFields.ReplySerial) (Some methodCall.SequenceNumber) "Method return should have call id as replyserial"
             Expect.equal (msg.HeaderFields.ErrorName) None "Method return should have no errorname set"
-            let msgResultValue = [|Types.DBusValue.Primitive (Types.DBusPrimitiveValue.String "resultValue")|]
+            let msgResultValue = [|ToDBus "resultValue"|]
             Expect.equal (msg.Body |> Seq.toArray) msgResultValue ""
 
 
@@ -204,7 +205,7 @@ let messageProcessorTests =
             let exportedPath = "/some/path"
             let exportedInterface = "some.interface"
             let exportedMember = "Member"
-            let methodHandler = ExportedMethodHandler(fun msg -> MessageFactory.CreateMethodReturn msg.SequenceNumber [|Types.DBusValue.Primitive (Types.DBusPrimitiveValue.String "resultValue")|] None msg.HeaderFields.Sender)
+            let methodHandler = ExportedMethodHandler(fun msg -> MessageFactory.CreateMethodReturn msg.SequenceNumber [|ToDBus "resultValue"|] None msg.HeaderFields.Sender)
 
             let processor = new MessageProcessor()
             processor.AddExportedObject { ObjectPath=exportedPath; 
@@ -222,7 +223,7 @@ let messageProcessorTests =
             Expect.equal msg.HeaderFields.Destination methodSender "Method result should be send to method caller"
             Expect.equal (msg.HeaderFields.ReplySerial) (Some methodCall.SequenceNumber) "Method return should have call id as replyserial"
             Expect.equal (msg.HeaderFields.ErrorName) None "Method return should have no errorname set"
-            let msgResultValue = [|Types.DBusValue.Primitive (Types.DBusPrimitiveValue.String "resultValue")|]
+            let msgResultValue = [|ToDBus "resultValue"|]
             Expect.equal (msg.Body |> Seq.toArray) msgResultValue ""
 
 
