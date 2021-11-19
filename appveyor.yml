@@ -10,8 +10,7 @@ build: off
 
 # use build script instead:
 build_script:
-  - cmd: echo "test build_script"
-#  - cmd: build.cmd
+  - cmd: build.cmd
 
 test_script:
   - cmd: runAltcover.cmd
