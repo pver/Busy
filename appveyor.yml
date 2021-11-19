@@ -18,4 +18,4 @@ test_script:
       # Upload coverage results to codecov.io
   - ps: $env:PATH = 'C:\msys64\usr\bin;' + $env:PATH
   - ps: Invoke-WebRequest -Uri 'https://codecov.io/bash' -OutFile codecov.sh
-  - ps: bash codecov.sh -f "BusyCoverage.xml"  
+  - cmd: codecov -f "BusyCoverage.xml"  
