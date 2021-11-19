@@ -5,6 +5,10 @@ image:
 install:
   - ps: choco install codecov
 
+# disable msbuild:
+build: off
+
+# use build script instead:
 build_script:
   - cmd: build.cmd
 
