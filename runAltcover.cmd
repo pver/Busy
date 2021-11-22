@@ -1,6 +1,6 @@
 del /F /Q .\codecoverage
 
-dotnet .\packages\altcover\tools\netcoreapp2.0\AltCover.dll /i=.\tests\Busy.Tests\bin\Debug\netcoreapp2.0 /o=.\codecoverage -x=.\codecoverage\BusyCoverage.xml -s=Busy.Tests --opencover
+dotnet .\packages\altcover\tools\netcoreapp2.0\AltCover.dll /i=.\tests\Busy.Tests\bin\Debug\netcoreapp3.1 /o=.\codecoverage -x=.\codecoverage\BusyCoverage.xml -s=Busy.Tests --opencover
 
 dotnet .\packages\altcover\tools\netcoreapp2.0\AltCover.dll runner -x "dotnet" -r ".\codecoverage" -- exec .\codecoverage\Busy.Tests.dll
 
