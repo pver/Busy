@@ -4,6 +4,5 @@ dotnet altcover /i=.\tests\Busy.Tests\bin\Debug\netcoreapp3.1 /o=.\codecoverage 
 
 dotnet altcover runner -x "dotnet" -r ".\codecoverage" -- exec .\codecoverage\Busy.Tests.dll
 
-copy .\tools\ThresholdConsoleSummary.dll .\packages\ReportGenerator\tools\
 set REPORT_THRESHOLD=85
-.\packages\ReportGenerator\tools\ReportGenerator.exe "-reports:.\codecoverage\BusyCoverage.xml" "-targetdir:.\codecoverage\report" "-reporttypes:Html;ThresholdConsoleSummary"
+dotnet reportgenerator "-reports:.\codecoverage\BusyCoverage.xml" "-targetdir:.\codecoverage\report" "-reporttypes:Html;ThresholdConsoleSummary" -plugins:%cd%\tools\ThresholdConsoleSummaryReportBuilder.dll

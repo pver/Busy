@@ -6,4 +6,3 @@ nuget FAKE ~> 4.64.11
 nuget FSharp.Core ~> 4.6.0
 
 nuget System.Security.Principal.Windows framework: >= netcoreapp2.0, netstandard2.0
-nuget ReportGenerator ~> 3.1.2
