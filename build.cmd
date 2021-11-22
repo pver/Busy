@@ -1,7 +1,11 @@
 @echo off
 cls
 
-.paket\paket.exe restore
+REM restore dotnet tools:
+dotnet tool restore
+
+dotnet paket restore
+
 if errorlevel 1 (
   exit /b %errorlevel%
 )
