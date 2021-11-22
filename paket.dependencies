@@ -1,10 +1,10 @@
 source https://www.nuget.org/api/v2
 
-framework: >= net461, netstandard2.0, netcoreapp2.0
+framework: >= net461, netstandard2.0, netcoreapp3.1
 nuget Expecto
-nuget FAKE
-nuget FSharp.Core
+nuget FAKE ~> 4.64.11
+nuget FSharp.Core ~> 4.6.0
 
 nuget System.Security.Principal.Windows framework: >= netcoreapp2.0, netstandard2.0
-nuget AltCover framework: >= netcoreapp2.0
-nuget ReportGenerator
+nuget AltCover ~> 3.5.530
+nuget ReportGenerator ~> 3.1.2
