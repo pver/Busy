@@ -1,8 +1,8 @@
 del /F /Q .\codecoverage
 
-dotnet .\packages\altcover\tools\netcoreapp2.0\AltCover.dll /i=.\tests\Busy.Tests\bin\Debug\netcoreapp3.1 /o=.\codecoverage -x=.\codecoverage\BusyCoverage.xml -s=Busy.Tests --opencover
+dotnet altcover /i=.\tests\Busy.Tests\bin\Debug\netcoreapp3.1 /o=.\codecoverage -r=.\codecoverage\BusyCoverage.xml -s=Busy.Tests --reportFormat=opencover
 
-dotnet .\packages\altcover\tools\netcoreapp2.0\AltCover.dll runner -x "dotnet" -r ".\codecoverage" -- exec .\codecoverage\Busy.Tests.dll
+dotnet altcover runner -x "dotnet" -r ".\codecoverage" -- exec .\codecoverage\Busy.Tests.dll
 
 copy .\tools\ThresholdConsoleSummary.dll .\packages\ReportGenerator\tools\
 set REPORT_THRESHOLD=85
