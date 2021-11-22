@@ -7,6 +7,12 @@
       "commands": [
         "paket"
       ]
+    },
+    "altcover.global": {
+      "version": "8.2.828",
+      "commands": [
+        "altcover"
+      ]
     }
   }
 }
