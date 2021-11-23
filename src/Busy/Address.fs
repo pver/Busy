@@ -19,7 +19,7 @@ module Address =
     type ParseAddressResult =
         | ValidAddress of DBusAddress
         | ParseAddressResults of ParseAddressResult[] // composite list of addresses (separated by semi colon)
-        | InvalidAddress of InvalidDBusAddress // malformed in any way
+        | InvalidAddress of InvalidDBusAddress // malformed in any way, todo: add indication of why it's invalid
         | UnsupportedAddress of UnsupportedAddress // correctly formed, but unknown or unsupported transporttype
         
     let rec internal filterValidAddresses (parseResult:ParseAddressResult) =

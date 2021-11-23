@@ -14,6 +14,7 @@
     <Compile Include="MarshallingTests.fs" />
     <Compile Include="AuthenticationTests.fs" />
     <Compile Include="AddressTests.fs" />
+    <Compile Include="BusNameTests.fs" />
     <Compile Include="EnvironmentTests.fs" />
     <Compile Include="UnixDomainSocketTests.fs" />
     <Compile Include="TransportTests.fs" />
