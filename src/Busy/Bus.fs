@@ -34,6 +34,7 @@ type IBus =
 
     abstract member AddExportedObject: ExportedObject -> unit
     // todo: should we need to remove exported objects as well?
+    abstract member Disconnect: unit -> unit
 
     [<CLIEvent>]
     abstract member DBusMessageReceived: IDelegateEvent<System.EventHandler<DBusMessageReceivedEventArgs>>
@@ -82,6 +83,7 @@ type Bus (transport:ITransport) =
             Marshalling.marshallMessage message
             |> transport.Write
 
+    // Todo: add cancellation possibility!
     member this.IterateMessage () =
             let message = Unmarshalling.unmarshallMessage transport
             match message with
@@ -115,6 +117,8 @@ type Bus (transport:ITransport) =
     member __.AddExportedObject exportedObject =
         messageProcessor.AddExportedObject exportedObject
 
+    member __.Disconnect = transport.Close
+
     // Todo: add timeout support!!
     member this.SendAndWait(message:DBusMessage) : Result<DBusMessage, string> =
         let call = messageProcessor.AddPendingCall(message.SequenceNumber)
@@ -130,5 +134,6 @@ type Bus (transport:ITransport) =
         member this.AddSignalHandler (handler) = this.AddSignalHandler handler
         member this.RemoveSignalHandler (handler) = this.RemoveSignalHandler handler
         member this.AddExportedObject (exportedObject) = this.AddExportedObject exportedObject
+        member this.Disconnect () = this.Disconnect()
         [<CLIEvent>]
         member __.DBusMessageReceived = dbusMessageReceived.Publish
