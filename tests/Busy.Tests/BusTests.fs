@@ -60,6 +60,18 @@ let busTests =
 
             Expect.equal itransport bus.Transport "Bus should store passed in ITransport"
 
+        testCase "IBus.Disconnect should call Close in ITransport" <| fun _ ->
+            let mutable closeCalled = false
+            let itransport = { new ITransport with
+                                    member __.Connect() = ()
+                                    member __.Close () = closeCalled <- true
+                                    member __.Write (_:byte[]) = ()
+                                    member __.ReadBytes _ = failwith "nothing to read here" }
+
+            let bus = Bus(itransport) :> IBus
+            bus.Disconnect()
+
+            Expect.isTrue closeCalled "Bus.Disconnect should have called Close in ITransport"
 
         testCase "SendMessage should send correct msg bytes to transport" <| fun _ ->
             let msg = Busy.MessageFactory.CreateSignal 
