@@ -1,4 +1,6 @@
 namespace Busy
+open Busy.BusName
+open Busy.Types
 
 // Internal for now, could be exposes in a proper way (for instance when requesting names on bus)
 module internal BusManagementMessages = 
@@ -16,9 +18,12 @@ module internal BusManagementMessages =
     let internal createHello () = createMessage "Hello" [||]
 
     let internal matchRuleToMessageBody rule =         
-        MatchRules.ToMatchRuleString rule
-        |> fun x -> [|Types.DBusValue.Primitive (Types.DBusPrimitiveValue.String x)|]
+        let dbusValue = MatchRules.ToMatchRuleString rule |> ToDBus
+        [|dbusValue|]
 
     let internal createAddMatch rule = matchRuleToMessageBody rule |> createMessage "AddMatch"
 
     let internal createRemoveMatch rule = matchRuleToMessageBody rule |> createMessage  "RemoveMatch"
+
+    let internal createRequestName (name:DBusName) (flags:uint32) = 
+        createMessage "RequestName" [| (ToDBus name.Value); (ToDBus flags)|]

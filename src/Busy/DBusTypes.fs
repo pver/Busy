@@ -106,6 +106,7 @@ module rec Types =
 
         type DBusTypeConversions = DBusTypeConversions with 
                 static member ($) (DBusTypeConversions, value: int) = DBusValue.Primitive(DBusPrimitiveValue.Int32 value)
+                static member ($) (DBusTypeConversions, value: uint32) = DBusValue.Primitive(DBusPrimitiveValue.Uint32 value)
                 static member ($) (DBusTypeConversions, value: int16) = DBusValue.Primitive(DBusPrimitiveValue.Int16 value)
                 static member ($) (DBusTypeConversions, value: string) = DBusValue.Primitive(DBusPrimitiveValue.String value)
                 // Todo: complete list of conversions!

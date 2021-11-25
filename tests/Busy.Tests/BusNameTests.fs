@@ -5,7 +5,7 @@ open Busy.BusName
 
 let createInvalidBusNameTestCase testCaseMsg invalidValue error =
     testCase testCaseMsg <| fun _ ->
-        let subject = ParseDBusName invalidValue
+        let subject = DBusName.ParseDBusName invalidValue
         let expected = InvalidBusName (invalidValue, error)
         Expect.equal subject expected testCaseMsg
 
@@ -19,7 +19,7 @@ let InvalidAddressTests =
 
 let createValidBusNameTestCase testCaseMsg busName parsedDBusName=
     testCase testCaseMsg <| fun _ ->
-        let subject = ParseDBusName busName
+        let subject = DBusName.ParseDBusName busName
         let expected = ValidBusName parsedDBusName
         Expect.equal subject expected testCaseMsg
 
