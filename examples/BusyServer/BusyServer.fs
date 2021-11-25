@@ -1,6 +1,8 @@
 module BusyServer
 
 open Busy
+open Busy.BusManagement
+open Busy.BusName
 open Busy.MessageTypes
 open Busy.MessageProcessing
 open Busy.Types
@@ -19,7 +21,7 @@ let rec runMessageLoop (bus:IBus) = async {
 
 [<EntryPoint>]
 let main argv =
-
+    printfn "Starting server, connecting to System bus.."
     let createBusResult = Bus.CreateKnownBus(KnownBus.SystemBus)
     match createBusResult with
     | Error r -> 
@@ -48,10 +50,27 @@ let main argv =
 
         bus.AddExportedObject exportedHello
 
+        printfn "Starting message loop.."
         let cts = new System.Threading.CancellationTokenSource()
         Async.Start(runMessageLoop bus, cts.Token)
-        printfn "Press ENTER to stop the demo server..."
 
-        System.Console.ReadLine() |> ignore
-        cts.Cancel()
-        0 // return an integer exit code
+        printfn "Request bus name for server.."
+        let requestedBusName = "My.BusyServer"
+        let busNameParseResult = DBusName.ParseDBusName requestedBusName
+        match busNameParseResult with
+        | InvalidBusName _ -> 
+            printfn "Invalid bus name specified!"
+            1
+        | ValidBusName busName ->
+            let requestNameResult = BusManager.RequestName bus busName RequestNameFlags.AllowReplacement
+            match requestNameResult with
+            | Error r ->
+                printfn "Error connecting to bus! %A" r
+                1
+            | Ok resultFlags -> 
+                printfn "Server is reachable via well-known bus name '%s' (%A)" "My.BusyServer" resultFlags
+                printfn "Press ENTER to stop the demo server..."
+
+                System.Console.ReadLine() |> ignore
+                cts.Cancel()
+                0 // return an integer exit code
