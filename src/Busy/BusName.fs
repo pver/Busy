@@ -43,15 +43,11 @@ module rec BusName =
 
     type InvalidDBusName = string
     type ParseDBusNameResult =
-        | ValidBusName of DBusName
-        | InvalidBusName of InvalidDBusName*ParseNameError // malformed in any way
+        | ValidBusName of ValidValue : DBusName
+        | InvalidBusName of InvalidValue:InvalidDBusName*Error:ParseNameError // malformed in any way
 
         member this.IsValid:bool =
             match this with 
             | ValidBusName _ -> true
             | InvalidBusName _ -> false
 
-        member x.TryGetSuccess([<Out>] success:byref<'DBusName>) =
-            match x with
-            | ValidBusName value -> success <- value; true
-            | _ -> false
