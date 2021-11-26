@@ -114,7 +114,9 @@ type Bus (transport:ITransport) =
 
         createRemoveMatch handler.MatchRule |> this.SendMessage // Todo: block? what to do with an error?
 
+    // Todo: also add RemoveExportedObject!
     member __.AddExportedObject exportedObject =
+        // Todo: add validation of objectpath in exportedObject?
         messageProcessor.AddExportedObject exportedObject
 
     member __.Disconnect = transport.Close

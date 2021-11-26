@@ -13,6 +13,7 @@ type ExportedMethodHandler (methodHandler:Func<DBusMessage,DBusMessage>) =
     member __.Invoke(message:DBusMessage) =
         methodHandler.Invoke message
 
+// Todo: add validation for the strings in these ExportedXXX types
 // Todo: add attributes for auto-introspect info generation? 
 // "Method, interface, property, signal, and argument elements may have 'annotations'"
 type ExportedSignal = { MemberName:string }
