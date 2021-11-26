@@ -9,7 +9,7 @@ module rec BusName =
     type DBusName =
         | UniqueBusName of UniqueDBusName
         | WellKnownBusName of WellKnownDBusName
-
+        with
         static member ParseDBusName (busName:string) =
             match System.String.IsNullOrWhiteSpace busName with 
             | true -> InvalidBusName (busName, EmptyBusName)
@@ -45,8 +45,8 @@ module rec BusName =
     type ParseDBusNameResult =
         | ValidBusName of ValidValue : DBusName
         | InvalidBusName of InvalidValue:InvalidDBusName*Error:ParseNameError // malformed in any way
-
-        member this.IsValid:bool =
+        with
+        member this.IsValid =
             match this with 
             | ValidBusName _ -> true
             | InvalidBusName _ -> false
