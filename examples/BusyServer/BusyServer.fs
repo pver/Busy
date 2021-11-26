@@ -2,7 +2,6 @@ module BusyServer
 
 open Busy
 open Busy.BusManagement
-open Busy.BusName
 open Busy.MessageTypes
 open Busy.MessageProcessing
 open Busy.Types
@@ -55,22 +54,15 @@ let main argv =
         Async.Start(runMessageLoop bus, cts.Token)
 
         printfn "Request bus name for server.."
-        let requestedBusName = "My.BusyServer"
-        let busNameParseResult = DBusName.ParseDBusName requestedBusName
-        match busNameParseResult with
-        | InvalidBusName _ -> 
-            printfn "Invalid bus name specified!"
+        let requestNameResult = BusManager.RequestName bus "My.BusyServer" RequestNameFlags.AllowReplacement
+        match requestNameResult with
+        | Error r ->
+            printfn "Error connecting to bus! %A" r
             1
-        | ValidBusName busName ->
-            let requestNameResult = BusManager.RequestName bus busName RequestNameFlags.AllowReplacement
-            match requestNameResult with
-            | Error r ->
-                printfn "Error connecting to bus! %A" r
-                1
-            | Ok resultFlags -> 
-                printfn "Server is reachable via well-known bus name '%s' (%A)" "My.BusyServer" resultFlags
-                printfn "Press ENTER to stop the demo server..."
+        | Ok resultFlags -> 
+            printfn "Server is reachable via well-known bus name '%s' (%A)" "My.BusyServer" resultFlags
+            printfn "Press ENTER to stop the demo server..."
 
-                System.Console.ReadLine() |> ignore
-                cts.Cancel()
-                0 // return an integer exit code
+            System.Console.ReadLine() |> ignore
+            cts.Cancel()
+            0 // return an integer exit code
