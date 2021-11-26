@@ -26,7 +26,11 @@ module BusManagement =
         static member RequestName (bus:IBus) (busName:string) (flags:RequestNameFlags)=
             let parsedName = DBusName.ParseDBusName busName
             match parsedName with
-            | InvalidBusName (_, err) -> Error (sprintf "Invalid request name result received: %s" (err.GetType().Name))
+            | InvalidBusName (_, err) -> 
+                let errorName = 
+                    match Microsoft.FSharp.Reflection.FSharpValue.GetUnionFields(err, typeof<ParseNameError>) with
+                    | case, _ -> case.Name
+                Error (sprintf "Invalid request name result received: %s" errorName)
             | ValidBusName validBusName ->
                 let requestNameMsq = createRequestName validBusName (uint32 flags)
                 let requestNameResult = bus.SendAndWait requestNameMsq 
