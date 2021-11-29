@@ -179,7 +179,6 @@ let toDBusTests =
     createToDBusValueTestCase "double ToDBus should convert" 1.23 (Primitive (DBusPrimitiveValue.Double 1.23))
     createToDBusValueTestCase "byte ToDBus should convert" 123uy (Primitive (DBusPrimitiveValue.Byte 123uy))
     createToDBusValueTestCase "string ToDBus should convert" "abc" (Primitive (DBusPrimitiveValue.String "abc"))
-    createToDBusValueTestCase "string null ToDBus should convert to empty" null (Primitive (DBusPrimitiveValue.String ""))
     createToDBusValueTestCase "bool true ToDBus should convert" true (Primitive (DBusPrimitiveValue.Boolean true))
     createToDBusValueTestCase "bool false ToDBus should convert" false (Primitive (DBusPrimitiveValue.Boolean false))
   ]
