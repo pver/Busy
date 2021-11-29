@@ -182,3 +182,24 @@ let toDBusTests =
     createToDBusValueTestCase "bool true ToDBus should convert" true (Primitive (DBusPrimitiveValue.Boolean true))
     createToDBusValueTestCase "bool false ToDBus should convert" false (Primitive (DBusPrimitiveValue.Boolean false))
   ]
+
+let createFromDBusValueTestCase testCaseName (input:DBusValue) (expected:obj) =
+    testCase testCaseName <| fun _ ->
+      let result = FromDBus input
+      Expect.equal result expected testCaseName
+
+[<Tests>]
+let fromDBusTests =
+  testList "FromDBusTests" [
+    createFromDBusValueTestCase "int32 FromDBus should convert" (Primitive (DBusPrimitiveValue.Int32 123)) 123 
+    createFromDBusValueTestCase "uint32 FromDBus should convert" (Primitive (DBusPrimitiveValue.Uint32 123u)) 123u
+    createFromDBusValueTestCase "int16 FromDBus should convert" (Primitive (DBusPrimitiveValue.Int16 123s)) 123s
+    createFromDBusValueTestCase "uint16 FromDBus should convert" (Primitive (DBusPrimitiveValue.Uint16 123us)) 123us
+    createFromDBusValueTestCase "int64 FromDBus should convert" (Primitive (DBusPrimitiveValue.Int64 123L)) 123L
+    createFromDBusValueTestCase "uint64 FromDBus should convert" (Primitive (DBusPrimitiveValue.Uint64 123UL)) 123UL
+    createFromDBusValueTestCase "double FromDBus should convert" (Primitive (DBusPrimitiveValue.Double 1.23)) 1.23
+    createFromDBusValueTestCase "byte FromDBus should convert" (Primitive (DBusPrimitiveValue.Byte 123uy)) 123uy
+    createFromDBusValueTestCase "string FromDBus should convert" (Primitive (DBusPrimitiveValue.String "abc")) "abc"
+    createFromDBusValueTestCase "bool true FromDBus should convert" (Primitive (DBusPrimitiveValue.Boolean true)) true
+    createFromDBusValueTestCase "bool false FromDBus should convert" (Primitive (DBusPrimitiveValue.Boolean false)) false
+  ]

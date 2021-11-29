@@ -128,4 +128,21 @@ module rec Types =
                                         failwith "Not supported yet"
 
         /// Helper method to convert CLR types to supported DBus types
-        let inline ToDBus value :DBusValue = ToDBusValueConversions $ value                                  
+        let inline ToDBus value :DBusValue = ToDBusValueConversions $ value    
+
+        type FromDBusValueConversions =  FromDBusValueConversions with
+                static member ($) (FromDBusValueConversions, value: DBusValue) : obj =
+                        match value with
+                        | DBusValue.Primitive(DBusPrimitiveValue.Uint32 x) -> x :> obj
+                        | DBusValue.Primitive(DBusPrimitiveValue.Int32 x) -> x :> obj
+                        | DBusValue.Primitive(DBusPrimitiveValue.String s) -> s :> obj
+                        | DBusValue.Primitive(DBusPrimitiveValue.Uint16 x) -> x :> obj
+                        | DBusValue.Primitive(DBusPrimitiveValue.Int16 x) -> x :> obj
+                        | DBusValue.Primitive(DBusPrimitiveValue.Uint64 x) -> x :> obj
+                        | DBusValue.Primitive(DBusPrimitiveValue.Int64 x) -> x :> obj
+                        | DBusValue.Primitive(DBusPrimitiveValue.Byte x) -> x :> obj
+                        | DBusValue.Primitive(DBusPrimitiveValue.Boolean x) -> x :> obj
+                        | DBusValue.Primitive(DBusPrimitiveValue.Double x) -> x :> obj
+                        | _ -> failwith "Not supported yet"
+
+        let inline FromDBus value :obj = FromDBusValueConversions $ value   
