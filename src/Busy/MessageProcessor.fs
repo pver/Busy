@@ -16,7 +16,7 @@ type ExportedMethodHandler (methodHandler:Func<DBusMessage,DBusMessage>) =
 // Todo: add validation for the strings in these ExportedXXX types
 // Todo: add attributes for auto-introspect info generation? 
 // "Method, interface, property, signal, and argument elements may have 'annotations'"
-type ExportedSignal = { MemberName:string }
+type ExportedSignal = { MemberName:string } // Todo: add signal handler
 type ExportedMethod = { MemberName:string; MethodHandler:ExportedMethodHandler } // Todo: add argument(s) info for introspection
 type ExportedProperty = { MemberName:string; MethodHandler:ExportedMethodHandler }
 
@@ -149,6 +149,7 @@ type MessageProcessor() =
 
         | DBusMessageType.Signal ->
             // --> Signal received, sending to handlers"
+            // Todo: check exported objects for handlers too!
             signalHandlers 
             |> Seq.filter (fun x -> x.Handles message)
             |> Seq.iter (fun x -> x.Invoke message)

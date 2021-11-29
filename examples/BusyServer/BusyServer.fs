@@ -5,6 +5,7 @@ open Busy.BusManagement
 open Busy.MessageTypes
 open Busy.MessageProcessing
 open Busy.Types
+open Busy.MatchRules
 
 let helloHandler (msg:DBusMessage) = 
     match msg.Body|> Seq.toArray with
@@ -52,6 +53,11 @@ let main argv =
         printfn "Starting message loop.."
         let cts = new System.Threading.CancellationTokenSource()
         Async.Start(runMessageLoop bus, cts.Token)
+
+        // Todo: this could be done via exported object too once supported!:
+        let exampleSignalRule = {MatchAllRule with Path=(Some (Path "/myService")); Interface=(Some "my.service"); Member=(Some "ServerSignal")}
+        let exampleSignalHandler = SignalHandler (exampleSignalRule, (fun signal -> printf "Got signal: %A" signal))
+        bus.AddSignalHandler exampleSignalHandler
 
         printfn "Request bus name for server.."
         let requestNameResult = BusManager.RequestName bus "My.BusyServer" RequestNameFlags.AllowReplacement
