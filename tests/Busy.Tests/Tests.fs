@@ -161,3 +161,25 @@ let signatureTests =
       let result = Busy.Utilities.ParseSignatureToDBusTypes "{(i)s}"
       Expect.isError result "Non basic key type dictionary signature should fail parsing"
   ]
+
+let createToDBusValueTestCase testCaseName (input:obj) (expected:DBusValue) =
+    testCase testCaseName <| fun _ ->
+      let result = ToDBus input
+      Expect.equal result expected testCaseName
+
+[<Tests>]
+let toDBusTests =
+  testList "ToDBusTests" [
+    createToDBusValueTestCase "int32 ToDBus should convert" 123 (Primitive (DBusPrimitiveValue.Int32 123))
+    createToDBusValueTestCase "uint32 ToDBus should convert" 123u (Primitive (DBusPrimitiveValue.Uint32 123u))
+    createToDBusValueTestCase "int16 ToDBus should convert" 123s (Primitive (DBusPrimitiveValue.Int16 123s))
+    createToDBusValueTestCase "uint16 ToDBus should convert" 123us (Primitive (DBusPrimitiveValue.Uint16 123us))
+    createToDBusValueTestCase "int64 ToDBus should convert" 123L (Primitive (DBusPrimitiveValue.Int64 123L))
+    createToDBusValueTestCase "uint64 ToDBus should convert" 123UL (Primitive (DBusPrimitiveValue.Uint64 123UL))
+    createToDBusValueTestCase "double ToDBus should convert" 1.23 (Primitive (DBusPrimitiveValue.Double 1.23))
+    createToDBusValueTestCase "byte ToDBus should convert" 123uy (Primitive (DBusPrimitiveValue.Byte 123uy))
+    createToDBusValueTestCase "string ToDBus should convert" "abc" (Primitive (DBusPrimitiveValue.String "abc"))
+    createToDBusValueTestCase "string null ToDBus should convert to empty" null (Primitive (DBusPrimitiveValue.String ""))
+    createToDBusValueTestCase "bool true ToDBus should convert" true (Primitive (DBusPrimitiveValue.Boolean true))
+    createToDBusValueTestCase "bool false ToDBus should convert" false (Primitive (DBusPrimitiveValue.Boolean false))
+  ]

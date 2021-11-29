@@ -104,12 +104,28 @@ module rec Types =
                                         | VariantType -> "v"
                                         | DictType (kt,vt) -> sprintf "{%s%s}" kt.Signature vt.Signature   
 
-        type DBusTypeConversions = DBusTypeConversions with 
-                static member ($) (DBusTypeConversions, value: int) = DBusValue.Primitive(DBusPrimitiveValue.Int32 value)
-                static member ($) (DBusTypeConversions, value: uint32) = DBusValue.Primitive(DBusPrimitiveValue.Uint32 value)
-                static member ($) (DBusTypeConversions, value: int16) = DBusValue.Primitive(DBusPrimitiveValue.Int16 value)
-                static member ($) (DBusTypeConversions, value: string) = DBusValue.Primitive(DBusPrimitiveValue.String value)
-                // Todo: complete list of conversions!
+        type ToDBusValueConversions = ToDBusValueConversions with 
+                // Todo: can this be optimized? Or improved syntax wise?
+                static member ($) (ToDBusValueConversions, value: obj) =
+                        match value with
+                        | :? uint32 as x -> DBusValue.Primitive(DBusPrimitiveValue.Uint32 x)
+                        | :? int32 as x -> DBusValue.Primitive(DBusPrimitiveValue.Int32 x)
+                        | :? uint16 as x -> DBusValue.Primitive(DBusPrimitiveValue.Uint16 x)
+                        | :? int16 as x -> DBusValue.Primitive(DBusPrimitiveValue.Int16 x)
+                        | :? uint64 as x -> DBusValue.Primitive(DBusPrimitiveValue.Uint64 x)
+                        | :? int64 as x -> DBusValue.Primitive(DBusPrimitiveValue.Int64 x)
+                        | :? byte as x -> DBusValue.Primitive(DBusPrimitiveValue.Byte x)
+                        | :? bool as x -> DBusValue.Primitive(DBusPrimitiveValue.Boolean x)
+                        | :? double as x -> DBusValue.Primitive(DBusPrimitiveValue.Double x)
+                        | :? string as s -> 
+                                if isNull value then DBusValue.Primitive(DBusPrimitiveValue.String "")
+                                else DBusValue.Primitive(DBusPrimitiveValue.String s)
+                        | _ ->
+                                if isNull value then
+                                        failwith "Invalid field found"
+                                else
+                                        // Todo: Object support: get properties and create struct type for it
+                                        failwith "Not supported yet"
 
         /// Helper method to convert CLR types to supported DBus types
-        let inline ToDBus value = DBusTypeConversions $ value                                     
+        let inline ToDBus value :DBusValue = ToDBusValueConversions $ value                                  
