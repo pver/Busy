@@ -3,11 +3,16 @@ module BusNameTests
 open Expecto
 open Busy.BusName
 
-let createInvalidBusNameTestCase testCaseMsg invalidValue error =
+let createInvalidBusNameTestCase testCaseMsg busName (expectedError:ParseNameError) =
     testCase testCaseMsg <| fun _ ->
-        let subject = ParseDBusName invalidValue
-        let expected = InvalidBusName (invalidValue, error)
-        Expect.equal subject expected testCaseMsg
+        let result = DBusName.ParseDBusName busName
+        Expect.isFalse result.IsValid testCaseMsg
+        match result with 
+        | InvalidBusName (invalidName,err) -> 
+            Expect.equal err expectedError (sprintf "%s - but error is different than expected" testCaseMsg)
+            Expect.equal invalidName busName (sprintf "%s - but invalidname doesn't hold the original input value" testCaseMsg)
+        | ValidBusName _ -> 
+            failtest (sprintf "%s - but resulted to InvalidBusName" testCaseMsg)
 
 [<Tests>]
 let InvalidAddressTests =
@@ -17,11 +22,16 @@ let InvalidAddressTests =
         createInvalidBusNameTestCase "Whitespace bus name is marked invalid" "   " EmptyBusName
     ]
 
-let createValidBusNameTestCase testCaseMsg busName parsedDBusName=
+let createValidBusNameTestCase testCaseMsg busName expectedValidBusName=
     testCase testCaseMsg <| fun _ ->
-        let subject = ParseDBusName busName
-        let expected = ValidBusName parsedDBusName
-        Expect.equal subject expected testCaseMsg
+        let result = DBusName.ParseDBusName busName
+        Expect.isTrue result.IsValid testCaseMsg
+        match result with 
+        | ValidBusName validName -> 
+            Expect.equal validName expectedValidBusName (sprintf "%s - but validname is different than expected" testCaseMsg)
+            Expect.equal validName.Value busName (sprintf "%s - but validname doesn't hold the original input value" testCaseMsg)
+        | InvalidBusName _ -> 
+            failtest (sprintf "%s - but resulted to InvalidBusName" testCaseMsg)
 
 [<Tests>]
 let ValidBusNameTests =

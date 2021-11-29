@@ -22,6 +22,7 @@
     <Compile Include="MatchRulesTests.fs" />
     <Compile Include="MessageProcessorTests.fs" />
     <Compile Include="BusTests.fs" />
+    <Compile Include="BusManagementTests.fs" />
     <Compile Include="Main.fs" />
     <None Include="App.config" />
   </ItemGroup>

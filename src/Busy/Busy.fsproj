@@ -25,6 +25,7 @@
     <Compile Include="MessageProcessor.fs" />
     <Compile Include="BusManagementMessages.fs" />
     <Compile Include="Bus.fs" />
+    <Compile Include="BusManagement.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>
