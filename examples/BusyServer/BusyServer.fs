@@ -70,5 +70,7 @@ let main argv =
             printfn "Press ENTER to stop the demo server..."
 
             System.Console.ReadLine() |> ignore
+            let releaseNameResult = BusManager.RequestName bus "My.BusyServer"
+            printf "Release bus name, result: %A" releaseNameResult
             cts.Cancel()
             0 // return an integer exit code
