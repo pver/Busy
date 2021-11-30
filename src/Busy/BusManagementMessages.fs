@@ -24,6 +24,3 @@ module internal BusManagementMessages =
     let internal createAddMatch rule = matchRuleToMessageBody rule |> createMessage "AddMatch"
 
     let internal createRemoveMatch rule = matchRuleToMessageBody rule |> createMessage  "RemoveMatch"
-
-    let internal createRequestName (name:DBusName) (flags:uint32) = 
-        createMessage "RequestName" [| (ToDBus name.Value); (ToDBus flags)|]
