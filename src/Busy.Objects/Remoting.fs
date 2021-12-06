@@ -49,21 +49,24 @@ module Remoting =
     type RemoteObjectTypeFactory() =
         static let mutable _moduleBuilder = Unchecked.defaultof<System.Reflection.Emit.ModuleBuilder>
         static let _interfaceImplementations = new Dictionary<Type, Type>()
-
+        static let _monitor = Object()
         static do 
             let assemblyName = new AssemblyName("BusyProxyAssembly")
             let dynamicAssembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
             _moduleBuilder <- dynamicAssembly.DefineDynamicModule("BusyRemoteObjectTypeFactoryModule");
 
-        member this.GetRemoteObject<'T>(bus : IBus, objectPath : string, interfaceName : string, destinationBusName : string) = 
+        member this.GetRemoteObject<'T>(bus : IBus) (objectPath : string) (interfaceName : string) (destinationBusName : string) = 
             if isNull objectPath then raise (new ArgumentNullException("objectPath"))
             if isNull interfaceName then raise (new ArgumentNullException("interfaceName"))
             if isNull destinationBusName then raise (new ArgumentNullException("destinationBusName"))
 
             let typeToImplement = typeof<'T>
 
-            if not (_interfaceImplementations.ContainsKey (typeToImplement))
-            then this.CreateRemoteObjectType (typeToImplement)
+            // assure not to create the same type twice
+            lock _monitor (fun () ->
+                if not (_interfaceImplementations.ContainsKey (typeToImplement))
+                then this.CreateRemoteObjectType (typeToImplement)
+            )
 
             let impl = _interfaceImplementations.[typeToImplement];
             (Activator.CreateInstance (impl, [|(bus :> obj); (objectPath :> obj); (interfaceName :> obj); (destinationBusName :> obj)|])) :?> 'T
@@ -73,7 +76,7 @@ module Remoting =
             then raise (new NotSupportedException("Only interface types are supported"))
             
             let baseClassType = typeof<RemoteObjectBase>
-            let typeBuilder = _moduleBuilder.DefineType (("RemoteProxyImpl" + interfaceToImplement.Name), (TypeAttributes.Class ||| TypeAttributes.Public), baseClassType)
+            let typeBuilder = _moduleBuilder.DefineType (("RemoteProxyImpl" + interfaceToImplement.FullName.Replace(".","_")), (TypeAttributes.Class ||| TypeAttributes.Public), baseClassType)
             typeBuilder.AddInterfaceImplementation (interfaceToImplement)
             
             //
@@ -155,4 +158,4 @@ module Remoting =
             let generatedType = typeBuilder.CreateType()
 #endif
 
-            _interfaceImplementations.[interfaceToImplement] <- generatedType
+            _interfaceImplementations.Add(interfaceToImplement, generatedType)
