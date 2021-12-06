@@ -31,6 +31,8 @@ type IRemoteObject =
    abstract member VoidInStringOut : unit -> string
    abstract member VoidInIntOut : unit -> int
    abstract member PrimitivesInVoidOut : int -> string -> double -> unit
+   abstract member PrimitivesInIntOut : int -> string -> double -> int
+   abstract member PrimitivesInStringOut : int -> string -> double -> string
 
 let testObjectPath = "obj"
 let testInterfaceName = "ifc"
@@ -132,6 +134,46 @@ let remotingTests =
             Expect.equal recordedMessages.Count 1 "1 request should have been sent to bus instance"
             let requestMsg = recordedMessages.Item(0)
             let expectedRequest = [||]
+            Expect.equal (requestMsg |> Seq.toArray) expectedRequest "expected request body not found"
+            Expect.equal resultString expectedResult "expected return value should match faked return value"
+
+        testCase "Method primitives in int out" <| fun _ ->
+            // Arrange
+            let recordedMessages = new System.Collections.Generic.List<DBusMessageBody>()
+            let expectedResult = 1234
+            let returnValue = ([ToDBus.Value expectedResult])
+            let fakebus = fakeRecordingBus recordedMessages (normalReturnFunction returnValue)
+
+            let factory = new RemoteObjectTypeFactory()
+            let proxy = factory.GetRemoteObject<IRemoteObject> fakebus testObjectPath testInterfaceName testDestinationName
+            
+            // Act
+            let resultInt = proxy.PrimitivesInIntOut 123 "teststring" 45.0
+
+            // Assert
+            Expect.equal recordedMessages.Count 1 "1 request should have been sent to bus instance"
+            let requestMsg = recordedMessages.Item(0)
+            let expectedRequest = [|(ToDBus.Value 123);(ToDBus.Value "teststring");(ToDBus.Value 45.0)|]
+            Expect.equal (requestMsg |> Seq.toArray) expectedRequest "expected request body not found"
+            Expect.equal resultInt expectedResult "expected return value should match faked return value"
+
+        testCase "Method primitives in string out" <| fun _ ->
+            // Arrange
+            let recordedMessages = new System.Collections.Generic.List<DBusMessageBody>()
+            let expectedResult = "abcde"
+            let returnValue = ([ToDBus.Value expectedResult])
+            let fakebus = fakeRecordingBus recordedMessages (normalReturnFunction returnValue)
+
+            let factory = new RemoteObjectTypeFactory()
+            let proxy = factory.GetRemoteObject<IRemoteObject> fakebus testObjectPath testInterfaceName testDestinationName
+            
+            // Act
+            let resultString = proxy.PrimitivesInStringOut 123 "teststring" 45.0
+
+            // Assert
+            Expect.equal recordedMessages.Count 1 "1 request should have been sent to bus instance"
+            let requestMsg = recordedMessages.Item(0)
+            let expectedRequest = [|(ToDBus.Value 123);(ToDBus.Value "teststring");(ToDBus.Value 45.0)|]
             Expect.equal (requestMsg |> Seq.toArray) expectedRequest "expected request body not found"
             Expect.equal resultString expectedResult "expected return value should match faked return value"
 
