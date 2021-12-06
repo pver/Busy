@@ -290,4 +290,4 @@ __pycache__/
 *.xsd.cs
 
 .ionide
-Busy.Tests.TestResults.xml
+*.TestResults.xml
