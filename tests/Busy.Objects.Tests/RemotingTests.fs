@@ -228,4 +228,19 @@ let remotingTests =
             Expect.equal (requestMsg |> Seq.toArray) expectedRequest "expected request body not found"
             Expect.equal resultString expectedResult "expected return value should match faked return value"
 
+        testCase "Method receiving more outputs than expected" <| fun _ ->
+            // Arrange
+            let recordedMessages = new System.Collections.Generic.List<DBusMessageBody>()
+            let returnValue = ([ToDBus.Value "abcde"]) // returning string for void method
+            let fakebus = fakeRecordingBus recordedMessages (normalReturnFunction returnValue)
+
+            let factory = new RemoteObjectTypeFactory()
+            let proxy = factory.GetRemoteObject<IRemoteObject> fakebus testObjectPath testInterfaceName testDestinationName
+            
+            // Act
+            let callMethod() = proxy.VoidInVoidOut()
+
+            // Assert
+            Expect.throwsT<RemoteObjectInvocationException> callMethod "invocation that receives more output values than expected should throw"
+
     ]
