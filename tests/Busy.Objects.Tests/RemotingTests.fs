@@ -46,6 +46,19 @@ let normalReturnFunction returnValue msg : Result<DBusMessage, string> =
 [<Tests>]
 let remotingTests =
     testList "remoteObjectTests" [
+        testCase "Factory should only allow interface types" <| fun _ ->
+            // Arrange
+            let recordedMessages = new System.Collections.Generic.List<DBusMessageBody>()
+            let returnValue = ([])
+            let fakebus = fakeRecordingBus recordedMessages (normalReturnFunction returnValue)
+            let factory = new RemoteObjectTypeFactory()
+
+            // Act (just using DBusMessage as non interface type)
+            let createNonInterfaceProxy() = factory.GetRemoteObject<DBusMessage> fakebus testObjectPath testInterfaceName testDestinationName |> ignore
+            
+            // Assert
+            Expect.throwsT<System.NotSupportedException> createNonInterfaceProxy "expected creating remote object of non interface type to throw"
+
         testCase "Method void in void out" <| fun _ ->
             // Arrange
             let recordedMessages = new System.Collections.Generic.List<DBusMessageBody>()
