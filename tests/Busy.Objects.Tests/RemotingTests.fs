@@ -45,6 +45,7 @@ let normalReturnFunction returnValue msg : Result<DBusMessage, string> =
     Expect.equal msg.HeaderFields.ObjectPath (Some testObjectPath) "object path name should match"
     Ok (result)
 
+// Todo: rework to base test classes to reduce test code duplication!!
 [<Tests>]
 let remotingTests =
     testList "remoteObjectTests" [
@@ -71,6 +72,45 @@ let remotingTests =
             
             // Assert
             Expect.throws createNonInterfaceProxy "expected creating remote object with null bus to throw"
+
+        testCase "Factory should not allow null obj path" <| fun _ ->
+            // Arrange
+            let recordedMessages = new System.Collections.Generic.List<DBusMessageBody>()
+            let returnValue = ([])
+            let fakebus = fakeRecordingBus recordedMessages (normalReturnFunction returnValue)
+            let factory = new RemoteObjectTypeFactory()
+
+            // Act
+            let createNonInterfaceProxy() = factory.GetRemoteObject<IRemoteObject> fakebus (null) testInterfaceName testDestinationName |> ignore
+            
+            // Assert
+            Expect.throwsT<System.ArgumentNullException> createNonInterfaceProxy "expected creating remote object with null object path to throw"
+
+        testCase "Factory should not allow null interface name" <| fun _ ->
+            // Arrange
+            let recordedMessages = new System.Collections.Generic.List<DBusMessageBody>()
+            let returnValue = ([])
+            let fakebus = fakeRecordingBus recordedMessages (normalReturnFunction returnValue)
+            let factory = new RemoteObjectTypeFactory()
+
+            // Act
+            let createNonInterfaceProxy() = factory.GetRemoteObject<IRemoteObject> fakebus testObjectPath (null) testDestinationName |> ignore
+            
+            // Assert
+            Expect.throwsT<System.ArgumentNullException> createNonInterfaceProxy "expected creating remote object with null interface name to throw"
+
+        testCase "Factory should not allow null destination name" <| fun _ ->
+            // Arrange
+            let recordedMessages = new System.Collections.Generic.List<DBusMessageBody>()
+            let returnValue = ([])
+            let fakebus = fakeRecordingBus recordedMessages (normalReturnFunction returnValue)
+            let factory = new RemoteObjectTypeFactory()
+
+            // Act
+            let createNonInterfaceProxy() = factory.GetRemoteObject<IRemoteObject> fakebus testObjectPath testInterfaceName (null) |> ignore
+            
+            // Assert
+            Expect.throwsT<System.ArgumentNullException> createNonInterfaceProxy "expected creating remote object with null destination name to throw"
 
         testCase "Method void in void out" <| fun _ ->
             // Arrange
