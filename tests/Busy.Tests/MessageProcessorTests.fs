@@ -179,7 +179,7 @@ let messageProcessorTests =
             let exportedPath = "/some/path"
             let exportedInterface = "some.interface"
             let exportedMember = "Member"
-            let methodHandler = ExportedMethodHandler(fun msg -> MessageFactory.CreateMethodReturn msg.SequenceNumber [|ToDBus "resultValue"|] None msg.HeaderFields.Sender)
+            let methodHandler = ExportedMethodHandler(fun msg -> MessageFactory.CreateMethodReturn msg.SequenceNumber [|ToDBus.Value "resultValue"|] None msg.HeaderFields.Sender)
 
             let processor = new MessageProcessor()
             processor.AddExportedObject { ObjectPath=exportedPath; 
@@ -197,7 +197,7 @@ let messageProcessorTests =
             Expect.equal msg.HeaderFields.Destination methodSender "Method result should be send to method caller"
             Expect.equal (msg.HeaderFields.ReplySerial) (Some methodCall.SequenceNumber) "Method return should have call id as replyserial"
             Expect.equal (msg.HeaderFields.ErrorName) None "Method return should have no errorname set"
-            let msgResultValue = [|ToDBus "resultValue"|]
+            let msgResultValue = [|ToDBus.Value "resultValue"|]
             Expect.equal (msg.Body |> Seq.toArray) msgResultValue ""
 
 
@@ -205,7 +205,7 @@ let messageProcessorTests =
             let exportedPath = "/some/path"
             let exportedInterface = "some.interface"
             let exportedMember = "Member"
-            let methodHandler = ExportedMethodHandler(fun msg -> MessageFactory.CreateMethodReturn msg.SequenceNumber [|ToDBus "resultValue"|] None msg.HeaderFields.Sender)
+            let methodHandler = ExportedMethodHandler(fun msg -> MessageFactory.CreateMethodReturn msg.SequenceNumber [|ToDBus.Value "resultValue"|] None msg.HeaderFields.Sender)
 
             let processor = new MessageProcessor()
             processor.AddExportedObject { ObjectPath=exportedPath; 
@@ -223,7 +223,7 @@ let messageProcessorTests =
             Expect.equal msg.HeaderFields.Destination methodSender "Method result should be send to method caller"
             Expect.equal (msg.HeaderFields.ReplySerial) (Some methodCall.SequenceNumber) "Method return should have call id as replyserial"
             Expect.equal (msg.HeaderFields.ErrorName) None "Method return should have no errorname set"
-            let msgResultValue = [|ToDBus "resultValue"|]
+            let msgResultValue = [|ToDBus.Value "resultValue"|]
             Expect.equal (msg.Body |> Seq.toArray) msgResultValue ""
 
 

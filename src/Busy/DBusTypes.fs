@@ -104,45 +104,48 @@ module rec Types =
                                         | VariantType -> "v"
                                         | DictType (kt,vt) -> sprintf "{%s%s}" kt.Signature vt.Signature   
 
-        type ToDBusValueConversions = ToDBusValueConversions with 
-                // Todo: can this be optimized? Or improved syntax wise?
-                static member ($) (ToDBusValueConversions, value: obj) =
+        type ToDBus() = 
+                static member Value (value: uint32) = DBusValue.Primitive(DBusPrimitiveValue.Uint32 value)
+                static member Value (value: int32) = DBusValue.Primitive(DBusPrimitiveValue.Int32 value)
+                static member Value (value: uint16) = DBusValue.Primitive(DBusPrimitiveValue.Uint16 value)
+                static member Value (value: int16) = DBusValue.Primitive(DBusPrimitiveValue.Int16 value)
+                static member Value (value: uint64) = DBusValue.Primitive(DBusPrimitiveValue.Uint64 value)
+                static member Value (value: int64) = DBusValue.Primitive(DBusPrimitiveValue.Int64 value)
+                static member Value (value: byte) = DBusValue.Primitive(DBusPrimitiveValue.Byte value)
+                static member Value (value: bool) = DBusValue.Primitive(DBusPrimitiveValue.Boolean value)
+                static member Value (value: double) = DBusValue.Primitive(DBusPrimitiveValue.Double value)
+                static member Value (value: string) = 
+                        if isNull value then DBusValue.Primitive(DBusPrimitiveValue.String "")
+                        else DBusValue.Primitive(DBusPrimitiveValue.String value) 
+                static member PrimitiveValue (value: obj) = 
                         match value with
-                        | :? uint32 as x -> DBusValue.Primitive(DBusPrimitiveValue.Uint32 x)
-                        | :? int32 as x -> DBusValue.Primitive(DBusPrimitiveValue.Int32 x)
-                        | :? uint16 as x -> DBusValue.Primitive(DBusPrimitiveValue.Uint16 x)
-                        | :? int16 as x -> DBusValue.Primitive(DBusPrimitiveValue.Int16 x)
-                        | :? uint64 as x -> DBusValue.Primitive(DBusPrimitiveValue.Uint64 x)
-                        | :? int64 as x -> DBusValue.Primitive(DBusPrimitiveValue.Int64 x)
-                        | :? byte as x -> DBusValue.Primitive(DBusPrimitiveValue.Byte x)
-                        | :? bool as x -> DBusValue.Primitive(DBusPrimitiveValue.Boolean x)
-                        | :? double as x -> DBusValue.Primitive(DBusPrimitiveValue.Double x)
-                        | :? string as s -> 
-                                if isNull value then DBusValue.Primitive(DBusPrimitiveValue.String "")
-                                else DBusValue.Primitive(DBusPrimitiveValue.String s)
-                        | _ ->
-                                if isNull value then
-                                        failwith "Invalid field found"
-                                else
-                                        // Todo: Object support: get properties and create struct type for it
-                                        failwith "Not supported yet"
-
-        /// Helper method to convert CLR types to supported DBus types
-        let inline ToDBus value :DBusValue = ToDBusValueConversions $ value    
-
-        type FromDBusValueConversions =  FromDBusValueConversions with
-                static member ($) (FromDBusValueConversions, value: DBusValue) : obj =
+                        | :? uint32 as x -> ToDBus.Value x
+                        | :? int32 as x -> ToDBus.Value x
+                        | :? uint16 as x -> ToDBus.Value x
+                        | :? int16 as x -> ToDBus.Value x
+                        | :? uint64 as x -> ToDBus.Value x
+                        | :? int64 as x -> ToDBus.Value x
+                        | :? byte as x -> ToDBus.Value x
+                        | :? bool as x -> ToDBus.Value x
+                        | :? double as x -> ToDBus.Value x
+                        | :? string as s -> ToDBus.Value s
+                        | _ -> failwith "Only primitive values supported!"
+                
+        type FromDBus() =
+                static member PrimitiveValue (value: DBusValue) =
                         match value with
-                        | DBusValue.Primitive(DBusPrimitiveValue.Uint32 x) -> x :> obj
-                        | DBusValue.Primitive(DBusPrimitiveValue.Int32 x) -> x :> obj
-                        | DBusValue.Primitive(DBusPrimitiveValue.String s) -> s :> obj
-                        | DBusValue.Primitive(DBusPrimitiveValue.Uint16 x) -> x :> obj
-                        | DBusValue.Primitive(DBusPrimitiveValue.Int16 x) -> x :> obj
-                        | DBusValue.Primitive(DBusPrimitiveValue.Uint64 x) -> x :> obj
-                        | DBusValue.Primitive(DBusPrimitiveValue.Int64 x) -> x :> obj
-                        | DBusValue.Primitive(DBusPrimitiveValue.Byte x) -> x :> obj
-                        | DBusValue.Primitive(DBusPrimitiveValue.Boolean x) -> x :> obj
-                        | DBusValue.Primitive(DBusPrimitiveValue.Double x) -> x :> obj
-                        | _ -> failwith "Not supported yet"
+                        | DBusValue.Primitive primitive ->
+                                match primitive with
+                                | DBusPrimitiveValue.Uint32 x -> x :> obj
+                                | DBusPrimitiveValue.Int32 x -> x :> obj
+                                | DBusPrimitiveValue.String s -> s :> obj
+                                | DBusPrimitiveValue.Uint16 x -> x :> obj
+                                | DBusPrimitiveValue.Int16 x -> x :> obj
+                                | DBusPrimitiveValue.Uint64 x -> x :> obj
+                                | DBusPrimitiveValue.Int64 x -> x :> obj
+                                | DBusPrimitiveValue.Byte x -> x :> obj
+                                | DBusPrimitiveValue.Boolean x -> x :> obj
+                                | DBusPrimitiveValue.Double x -> x :> obj
+                                | _ -> failwith "Only primitive values supported!"
+                        | _ -> failwith "Only primitive values supported!"
 
-        let inline FromDBus value :obj = FromDBusValueConversions $ value   

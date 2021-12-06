@@ -25,8 +25,8 @@ module BusManagement =
         | NonExistent = 2
         | NotOwned = 3
 
-    let private createRequestName (name:DBusName) flags = createMessage "RequestName" [| (ToDBus name.Value); (ToDBus (uint32 flags)) |]
-    let private createReleaseName (name:DBusName) = createMessage "ReleaseName" [| (ToDBus name.Value) |]
+    let private createRequestName (name:DBusName) flags = createMessage "RequestName" [| (ToDBus.Value name.Value); (ToDBus.Value (uint32 flags)) |]
+    let private createReleaseName (name:DBusName) = createMessage "ReleaseName" [| (ToDBus.Value name.Value) |]
     
     type BusManager()=
         // Todo: keep as static methods or add interface with these methods?

@@ -11,7 +11,7 @@ let helloHandler (msg:DBusMessage) =
     match msg.Body|> Seq.toArray with
     | [| Busy.Types.DBusValue.Primitive(Busy.Types.DBusPrimitiveValue.String s) |] -> 
         let response = sprintf "Hello %s" s
-        MessageFactory.CreateMethodReturnForMessage msg [|ToDBus response|]
+        MessageFactory.CreateMethodReturnForMessage msg [|ToDBus.Value response|]
     | _ -> MessageFactory.CreateErrorForMessage msg "demo.server.InvalidArguments" [||]
 
 let rec runMessageLoop (bus:IBus) = async {

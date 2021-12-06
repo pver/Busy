@@ -162,44 +162,45 @@ let signatureTests =
       Expect.isError result "Non basic key type dictionary signature should fail parsing"
   ]
 
-let createToDBusValueTestCase testCaseName (input:obj) (expected:DBusValue) =
-    testCase testCaseName <| fun _ ->
-      let result = ToDBus input
-      Expect.equal result expected testCaseName
+let createToDBusValueTestCase testCaseName (input) (expected:DBusValue) =
+    testCase testCaseName <| fun _ -> Expect.equal input expected testCaseName
 
 [<Tests>]
 let toDBusTests =
   testList "ToDBusTests" [
-    createToDBusValueTestCase "int32 ToDBus should convert" 123 (Primitive (DBusPrimitiveValue.Int32 123))
-    createToDBusValueTestCase "uint32 ToDBus should convert" 123u (Primitive (DBusPrimitiveValue.Uint32 123u))
-    createToDBusValueTestCase "int16 ToDBus should convert" 123s (Primitive (DBusPrimitiveValue.Int16 123s))
-    createToDBusValueTestCase "uint16 ToDBus should convert" 123us (Primitive (DBusPrimitiveValue.Uint16 123us))
-    createToDBusValueTestCase "int64 ToDBus should convert" 123L (Primitive (DBusPrimitiveValue.Int64 123L))
-    createToDBusValueTestCase "uint64 ToDBus should convert" 123UL (Primitive (DBusPrimitiveValue.Uint64 123UL))
-    createToDBusValueTestCase "double ToDBus should convert" 1.23 (Primitive (DBusPrimitiveValue.Double 1.23))
-    createToDBusValueTestCase "byte ToDBus should convert" 123uy (Primitive (DBusPrimitiveValue.Byte 123uy))
-    createToDBusValueTestCase "string ToDBus should convert" "abc" (Primitive (DBusPrimitiveValue.String "abc"))
-    createToDBusValueTestCase "bool true ToDBus should convert" true (Primitive (DBusPrimitiveValue.Boolean true))
-    createToDBusValueTestCase "bool false ToDBus should convert" false (Primitive (DBusPrimitiveValue.Boolean false))
+    createToDBusValueTestCase "uint32 ToDBus should convert" (ToDBus.Value 123u) (Primitive (DBusPrimitiveValue.Uint32 123u))
+    createToDBusValueTestCase "int32 ToDBus should convert" (ToDBus.Value 123) (Primitive (DBusPrimitiveValue.Int32 123))
+    createToDBusValueTestCase "int16 ToDBus should convert" (ToDBus.Value 123s) (Primitive (DBusPrimitiveValue.Int16 123s))
+    createToDBusValueTestCase "uint16 ToDBus should convert" (ToDBus.Value 123us) (Primitive (DBusPrimitiveValue.Uint16 123us))
+    createToDBusValueTestCase "int64 ToDBus should convert" (ToDBus.Value 123L) (Primitive (DBusPrimitiveValue.Int64 123L))
+    createToDBusValueTestCase "uint64 ToDBus should convert" (ToDBus.Value 123UL) (Primitive (DBusPrimitiveValue.Uint64 123UL))
+    createToDBusValueTestCase "double ToDBus should convert" (ToDBus.Value 1.23) (Primitive (DBusPrimitiveValue.Double 1.23))
+    createToDBusValueTestCase "byte ToDBus should convert" (ToDBus.Value 123uy) (Primitive (DBusPrimitiveValue.Byte 123uy))
+    createToDBusValueTestCase "string ToDBus should convert" (ToDBus.Value "abc") (Primitive (DBusPrimitiveValue.String "abc"))
+    createToDBusValueTestCase "bool true ToDBus should convert" (ToDBus.Value true) (Primitive (DBusPrimitiveValue.Boolean true))
+    createToDBusValueTestCase "bool false ToDBus should convert" (ToDBus.Value false) (Primitive (DBusPrimitiveValue.Boolean false))
   ]
 
-let createFromDBusValueTestCase testCaseName (input:DBusValue) (expected:obj) =
+let createFromDBusAndToValueTestCase testCaseName (input:DBusValue) (expected:obj) =
     testCase testCaseName <| fun _ ->
-      let result = FromDBus input
+      let result = FromDBus.PrimitiveValue input
       Expect.equal result expected testCaseName
+
+      let convertBack = ToDBus.PrimitiveValue expected
+      Expect.equal convertBack input (sprintf "%s back to original too" testCaseName)
 
 [<Tests>]
 let fromDBusTests =
   testList "FromDBusTests" [
-    createFromDBusValueTestCase "int32 FromDBus should convert" (Primitive (DBusPrimitiveValue.Int32 123)) 123 
-    createFromDBusValueTestCase "uint32 FromDBus should convert" (Primitive (DBusPrimitiveValue.Uint32 123u)) 123u
-    createFromDBusValueTestCase "int16 FromDBus should convert" (Primitive (DBusPrimitiveValue.Int16 123s)) 123s
-    createFromDBusValueTestCase "uint16 FromDBus should convert" (Primitive (DBusPrimitiveValue.Uint16 123us)) 123us
-    createFromDBusValueTestCase "int64 FromDBus should convert" (Primitive (DBusPrimitiveValue.Int64 123L)) 123L
-    createFromDBusValueTestCase "uint64 FromDBus should convert" (Primitive (DBusPrimitiveValue.Uint64 123UL)) 123UL
-    createFromDBusValueTestCase "double FromDBus should convert" (Primitive (DBusPrimitiveValue.Double 1.23)) 1.23
-    createFromDBusValueTestCase "byte FromDBus should convert" (Primitive (DBusPrimitiveValue.Byte 123uy)) 123uy
-    createFromDBusValueTestCase "string FromDBus should convert" (Primitive (DBusPrimitiveValue.String "abc")) "abc"
-    createFromDBusValueTestCase "bool true FromDBus should convert" (Primitive (DBusPrimitiveValue.Boolean true)) true
-    createFromDBusValueTestCase "bool false FromDBus should convert" (Primitive (DBusPrimitiveValue.Boolean false)) false
+    createFromDBusAndToValueTestCase "int32 FromDBus should convert" (Primitive (DBusPrimitiveValue.Int32 123)) 123 
+    createFromDBusAndToValueTestCase "uint32 FromDBus should convert" (Primitive (DBusPrimitiveValue.Uint32 123u)) 123u
+    createFromDBusAndToValueTestCase "int16 FromDBus should convert" (Primitive (DBusPrimitiveValue.Int16 123s)) 123s
+    createFromDBusAndToValueTestCase "uint16 FromDBus should convert" (Primitive (DBusPrimitiveValue.Uint16 123us)) 123us
+    createFromDBusAndToValueTestCase "int64 FromDBus should convert" (Primitive (DBusPrimitiveValue.Int64 123L)) 123L
+    createFromDBusAndToValueTestCase "uint64 FromDBus should convert" (Primitive (DBusPrimitiveValue.Uint64 123UL)) 123UL
+    createFromDBusAndToValueTestCase "double FromDBus should convert" (Primitive (DBusPrimitiveValue.Double 1.23)) 1.23
+    createFromDBusAndToValueTestCase "byte FromDBus should convert" (Primitive (DBusPrimitiveValue.Byte 123uy)) 123uy
+    createFromDBusAndToValueTestCase "string FromDBus should convert" (Primitive (DBusPrimitiveValue.String "abc")) "abc"
+    createFromDBusAndToValueTestCase "bool true FromDBus should convert" (Primitive (DBusPrimitiveValue.Boolean true)) true
+    createFromDBusAndToValueTestCase "bool false FromDBus should convert" (Primitive (DBusPrimitiveValue.Boolean false)) false
   ]

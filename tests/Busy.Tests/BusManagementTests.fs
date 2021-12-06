@@ -42,14 +42,14 @@ let busTests =
 
         testCase "RequestName should be ok with valid busname" <| fun _ ->
             let recordedMessages = new System.Collections.Generic.List<DBusMessageBody>()
-            let responseMessage = ToDBus ((uint32) RequestNameResult.PrimaryOwner)
+            let responseMessage = ToDBus.Value ((uint32) RequestNameResult.PrimaryOwner)
             let fakebus = fakeRecordingBus recordedMessages [| [|responseMessage|] |]
 
             let response = BusManager.RequestName fakebus "my.valid.name" RequestNameFlags.AllowReplacement
             let expectedResponse = Ok (RequestNameResult.PrimaryOwner)
             Expect.equal response expectedResponse "RequestName didn't return the expected response value with valid busname"
             Expect.equal recordedMessages.Count 1 "Only 1 bus message should be send to request name"
-            let expectedMessageBody =  [|(ToDBus "my.valid.name"); (ToDBus 1u)|]
+            let expectedMessageBody =  [|(ToDBus.Value "my.valid.name"); (ToDBus.Value 1u)|]
             Expect.sequenceEqual (recordedMessages.[0]) expectedMessageBody "Sent message for request name should have expected content"
         
         testCase "ReleaseName should not send messages for invalid busname" <| fun _ ->
@@ -63,13 +63,13 @@ let busTests =
 
         testCase "ReleaseName should be ok with valid busname" <| fun _ ->
             let recordedMessages = new System.Collections.Generic.List<DBusMessageBody>()
-            let responseMessage = ToDBus ((uint32) ReleaseNameResult.Released)
+            let responseMessage = ToDBus.Value ((uint32) ReleaseNameResult.Released)
             let fakebus = fakeRecordingBus recordedMessages [| [|responseMessage|] |]
 
             let response = BusManager.ReleaseName fakebus "my.valid.name"
             let expectedResponse = Ok (ReleaseNameResult.Released)
             Expect.equal response expectedResponse "ReleaseName didn't return the expected response value with valid busname"
             Expect.equal recordedMessages.Count 1 "Only 1 bus message should be send to release name"
-            let expectedMessageBody =  [|(ToDBus "my.valid.name")|]
+            let expectedMessageBody =  [|(ToDBus.Value "my.valid.name")|]
             Expect.sequenceEqual (recordedMessages.[0]) expectedMessageBody "Sent message for release name should have expected content"
     ]
