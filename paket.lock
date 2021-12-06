@@ -7,4 +7,7 @@ NUGET
     FAKE (4.64.18)
     FSharp.Core (4.6.2)
     Mono.Cecil (0.11.4)
+    System.Reflection.Emit (4.7)
+      System.Reflection.Emit.ILGeneration (>= 4.7) - restriction: || (&& (== netcoreapp3.1) (< netcoreapp2.0) (< netstandard2.1)) (&& (== netcoreapp3.1) (< netstandard1.1)) (&& (== netcoreapp3.1) (< netstandard2.0)) (&& (== netcoreapp3.1) (>= uap10.1)) (== netstandard2.0) (&& (< net45) (>= net461) (>= netstandard2.0)) (&& (< net45) (>= net461) (< netstandard2.0)) (&& (>= net461) (< netstandard1.1)) (&& (>= net461) (< netstandard2.0) (>= wpa81)) (&& (>= net461) (>= uap10.1))
+    System.Reflection.Emit.ILGeneration (4.7) - restriction: || (&& (== netcoreapp3.1) (>= net461)) (&& (== netcoreapp3.1) (< netcoreapp2.0) (< netstandard2.1)) (&& (== netcoreapp3.1) (< netstandard1.1)) (&& (== netcoreapp3.1) (< netstandard2.0)) (&& (== netcoreapp3.1) (>= uap10.1)) (== netstandard2.0) (&& (< net45) (>= net461) (>= netstandard2.0)) (&& (< net45) (>= net461) (< netstandard2.0)) (&& (>= net461) (< netstandard1.1)) (&& (>= net461) (< netstandard2.0) (>= wpa81)) (&& (>= net461) (>= uap10.1))
     System.Security.Principal.Windows (5.0) - restriction: || (== netcoreapp3.1) (== netstandard2.0) (&& (>= net461) (>= netcoreapp2.0))
