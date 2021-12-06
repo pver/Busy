@@ -61,6 +61,17 @@ let remotingTests =
             // Assert
             Expect.throwsT<System.NotSupportedException> createNonInterfaceProxy "expected creating remote object of non interface type to throw"
 
+        testCase "Factory should not allow null bus" <| fun _ ->
+            // Arrange
+            let factory = new RemoteObjectTypeFactory()
+            let nullBus = (Unchecked.defaultof<IBus>)
+
+            // Act
+            let createNonInterfaceProxy() = factory.GetRemoteObject<IRemoteObject> nullBus testObjectPath testInterfaceName testDestinationName |> ignore
+            
+            // Assert
+            Expect.throws createNonInterfaceProxy "expected creating remote object with null bus to throw"
+
         testCase "Method void in void out" <| fun _ ->
             // Arrange
             let recordedMessages = new System.Collections.Generic.List<DBusMessageBody>()

@@ -69,7 +69,8 @@ module Remoting =
             )
 
             let impl = _interfaceImplementations.[typeToImplement];
-            (Activator.CreateInstance (impl, [|(bus :> obj); (objectPath :> obj); (interfaceName :> obj); (destinationBusName :> obj)|])) :?> 'T
+            let constructorArgs = [|(bus :> obj); (objectPath :> obj); (interfaceName :> obj); (destinationBusName :> obj)|]
+            (Activator.CreateInstance (impl, constructorArgs (* when on .netstandard 2.1: pass BindingFlags.DoNotWrapExceptions *) )) :?> 'T
         
         member private this.CreateRemoteObjectType(interfaceToImplement : Type) = 
             if not interfaceToImplement.IsInterface
