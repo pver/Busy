@@ -21,7 +21,7 @@ module Remoting =
             new(bus : IBus) as this = 
                 (RemoteObjectBase ())
                 then
-                    if isNull (bus:> obj) then raise (new ArgumentNullException("bus"))
+                    if isNull (bus:> obj) then nullArg "bus"
                     this._bus <- bus
 
             member this.ExecuteMethodCall (objectPath : string) (interfaceName : string) (memberName : string) (destinationBusName : string) (args : obj[]) (expectedOutputCount : int) = 
@@ -56,9 +56,9 @@ module Remoting =
             _moduleBuilder <- dynamicAssembly.DefineDynamicModule("BusyRemoteObjectTypeFactoryModule");
 
         member this.GetRemoteObject<'T>(bus : IBus) (objectPath : string) (interfaceName : string) (destinationBusName : string) = 
-            if isNull objectPath then raise (new ArgumentNullException("objectPath"))
-            if isNull interfaceName then raise (new ArgumentNullException("interfaceName"))
-            if isNull destinationBusName then raise (new ArgumentNullException("destinationBusName"))
+            if isNull objectPath then nullArg  "objectPath"
+            if isNull interfaceName then nullArg "interfaceName"
+            if isNull destinationBusName then nullArg "destinationBusName"
 
             let typeToImplement = typeof<'T>
 
