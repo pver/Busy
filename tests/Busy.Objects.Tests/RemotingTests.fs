@@ -46,6 +46,7 @@ let normalReturnFunction returnValue msg : Result<DBusMessage, string> =
     Ok (result)
 
 // Todo: rework to base test classes to reduce test code duplication!!
+let factory = new RemoteObjectTypeFactory()
 [<Tests>]
 let remotingTests =
     testList "remoteObjectTests" [
@@ -54,7 +55,6 @@ let remotingTests =
             let recordedMessages = new System.Collections.Generic.List<DBusMessageBody>()
             let returnValue = ([])
             let fakebus = fakeRecordingBus recordedMessages (normalReturnFunction returnValue)
-            let factory = new RemoteObjectTypeFactory()
 
             // Act (just using DBusMessage as non interface type)
             let createNonInterfaceProxy() = factory.GetRemoteObject<DBusMessage> fakebus testObjectPath testInterfaceName testDestinationName |> ignore
@@ -64,7 +64,6 @@ let remotingTests =
 
         testCase "Factory should not allow null bus" <| fun _ ->
             // Arrange
-            let factory = new RemoteObjectTypeFactory()
             let nullBus = (Unchecked.defaultof<IBus>)
 
             // Act
@@ -78,7 +77,6 @@ let remotingTests =
             let recordedMessages = new System.Collections.Generic.List<DBusMessageBody>()
             let returnValue = ([])
             let fakebus = fakeRecordingBus recordedMessages (normalReturnFunction returnValue)
-            let factory = new RemoteObjectTypeFactory()
 
             // Act
             let createNonInterfaceProxy() = factory.GetRemoteObject<IRemoteObject> fakebus (null) testInterfaceName testDestinationName |> ignore
@@ -91,7 +89,6 @@ let remotingTests =
             let recordedMessages = new System.Collections.Generic.List<DBusMessageBody>()
             let returnValue = ([])
             let fakebus = fakeRecordingBus recordedMessages (normalReturnFunction returnValue)
-            let factory = new RemoteObjectTypeFactory()
 
             // Act
             let createNonInterfaceProxy() = factory.GetRemoteObject<IRemoteObject> fakebus testObjectPath (null) testDestinationName |> ignore
@@ -104,7 +101,6 @@ let remotingTests =
             let recordedMessages = new System.Collections.Generic.List<DBusMessageBody>()
             let returnValue = ([])
             let fakebus = fakeRecordingBus recordedMessages (normalReturnFunction returnValue)
-            let factory = new RemoteObjectTypeFactory()
 
             // Act
             let createNonInterfaceProxy() = factory.GetRemoteObject<IRemoteObject> fakebus testObjectPath testInterfaceName (null) |> ignore
@@ -118,7 +114,6 @@ let remotingTests =
             let returnValue = ([])
             let fakebus = fakeRecordingBus recordedMessages (normalReturnFunction returnValue)
 
-            let factory = new RemoteObjectTypeFactory()
             let proxy = factory.GetRemoteObject<IRemoteObject> fakebus testObjectPath testInterfaceName testDestinationName
             
             // Act
@@ -136,7 +131,6 @@ let remotingTests =
             let returnValue = ([])
             let fakebus = fakeRecordingBus recordedMessages (normalReturnFunction returnValue)
 
-            let factory = new RemoteObjectTypeFactory()
             let proxy = factory.GetRemoteObject<IRemoteObject> fakebus testObjectPath testInterfaceName testDestinationName
             
             // Act
@@ -155,7 +149,6 @@ let remotingTests =
             let returnValue = ([ToDBus.Value expectedResult])
             let fakebus = fakeRecordingBus recordedMessages (normalReturnFunction returnValue)
 
-            let factory = new RemoteObjectTypeFactory()
             let proxy = factory.GetRemoteObject<IRemoteObject> fakebus testObjectPath testInterfaceName testDestinationName
             
             // Act
@@ -175,7 +168,6 @@ let remotingTests =
             let returnValue = ([ToDBus.Value expectedResult])
             let fakebus = fakeRecordingBus recordedMessages (normalReturnFunction returnValue)
 
-            let factory = new RemoteObjectTypeFactory()
             let proxy = factory.GetRemoteObject<IRemoteObject> fakebus testObjectPath testInterfaceName testDestinationName
             
             // Act
@@ -195,7 +187,6 @@ let remotingTests =
             let returnValue = ([ToDBus.Value expectedResult])
             let fakebus = fakeRecordingBus recordedMessages (normalReturnFunction returnValue)
 
-            let factory = new RemoteObjectTypeFactory()
             let proxy = factory.GetRemoteObject<IRemoteObject> fakebus testObjectPath testInterfaceName testDestinationName
             
             // Act
@@ -215,7 +206,6 @@ let remotingTests =
             let returnValue = ([ToDBus.Value expectedResult])
             let fakebus = fakeRecordingBus recordedMessages (normalReturnFunction returnValue)
 
-            let factory = new RemoteObjectTypeFactory()
             let proxy = factory.GetRemoteObject<IRemoteObject> fakebus testObjectPath testInterfaceName testDestinationName
             
             // Act
@@ -234,7 +224,6 @@ let remotingTests =
             let returnValue = ([ToDBus.Value "abcde"]) // returning string for void method
             let fakebus = fakeRecordingBus recordedMessages (normalReturnFunction returnValue)
 
-            let factory = new RemoteObjectTypeFactory()
             let proxy = factory.GetRemoteObject<IRemoteObject> fakebus testObjectPath testInterfaceName testDestinationName
             
             // Act
@@ -242,5 +231,4 @@ let remotingTests =
 
             // Assert
             Expect.throwsT<RemoteObjectInvocationException> callMethod "invocation that receives more output values than expected should throw"
-
     ]
