@@ -24,7 +24,7 @@ module Remoting =
                     if isNull (bus:> obj) then nullArg "bus"
                     this._bus <- bus
 
-            member this.ExecuteMethodCall (objectPath : string) (interfaceName : string) (memberName : string) (destinationBusName : string) (args : obj[]) (expectedOutputCount : int) = 
+            member this.ExecuteMethodCall (objectPath : string) (interfaceName : string) (memberName : string) (destinationBusName : string) (args : obj[]) (expectedOutputType : Type) = 
                 let dbusArgs = if isNull args then [||] else args |> Array.map (Types.ToDBus.PrimitiveValue)
                 let msg = MessageFactory.CreateMethodCall objectPath (Some (interfaceName)) memberName dbusArgs None (Some (destinationBusName))
                 let callResult = this._bus.SendAndWait (msg)
@@ -33,6 +33,7 @@ module Remoting =
                 | Ok result ->
                     let outputs = (result.Body.Select (Types.FromDBus.PrimitiveValue)).ToArray ()
                     let actualOutputCount = outputs.Length
+                    let expectedOutputCount = if expectedOutputType = typeof<Void> then 0 else 1
                     if expectedOutputCount <> actualOutputCount
                     then 
                         let msg = sprintf "Expected number of output values %d does not match actual number of output values %d." expectedOutputCount actualOutputCount
@@ -77,10 +78,10 @@ module Remoting =
             then raise (new NotSupportedException("Only interface types are supported"))
             
             let baseClassType = typeof<RemoteObjectBase>
-            let typeBuilder = _moduleBuilder.DefineType (("RemoteProxyImpl" + interfaceToImplement.FullName.Replace(".","_")), (TypeAttributes.Class ||| TypeAttributes.Public), baseClassType)
+            let typeName = "BusyRemoteProxyImpl." + interfaceToImplement.FullName.Replace(".","_")
+            let typeBuilder = _moduleBuilder.DefineType (typeName, (TypeAttributes.Class ||| TypeAttributes.Public), baseClassType)
             typeBuilder.AddInterfaceImplementation (interfaceToImplement)
-            
-            //
+
             let baseConstructor = (baseClassType.GetConstructors (BindingFlags.NonPublic ||| BindingFlags.Public ||| BindingFlags.Instance)).Single (fun x->(x.GetParameters().Length) = 1)
             let constructor = typeBuilder.DefineConstructor (MethodAttributes.Public, CallingConventions.Standard, [|typeof<IBus>; typeof<string>; typeof<string>; typeof<string>|])
             // create local fields to keep constructor injected values in:
@@ -106,6 +107,8 @@ module Remoting =
             ilGenerator.Emit (OpCodes.Stfld, fldDest)
             ilGenerator.Emit (OpCodes.Ret)
 
+            let getTypeMethodCall = typeof<Type>.GetMethod("GetType", BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic, null, [|(typeof<string>)|], null);
+
             let executeMethodCall = (baseClassType.GetMethods (BindingFlags.Public ||| BindingFlags.Instance)).Single (fun x -> x.Name = "ExecuteMethodCall")
             for interfaceMethod in interfaceToImplement.GetMethods () do
                 let methodName = interfaceMethod.Name
@@ -115,7 +118,18 @@ module Remoting =
                 let returnTypeCount = if returnType = typeof<Void> then 0 else 1
                 let methodBuilder = typeBuilder.DefineMethod (methodName, (MethodAttributes.Public ||| MethodAttributes.Virtual), returnType, parameterTypes)
                 let methodIl = methodBuilder.GetILGenerator ()
+                
+                methodIl.DeclareLocal(typeof<Type>) |> ignore
+
                 methodIl.Emit (OpCodes.Nop)
+
+                // store the return type in a local variable (calling Type.GetType method to get it in the emitted code..)
+                // Todo: possible improvement: cache this instead of doing this every method call
+                methodIl.Emit (OpCodes.Ldstr, returnType.AssemblyQualifiedName)
+                methodIl.Emit (OpCodes.Call, getTypeMethodCall)
+                methodIl.Emit (OpCodes.Stloc_0) // store result (=ReturnType) in the first (only) local variable
+
+                // prepare all arguments for calling ExecuteMethodCall on RemoteObjectBase
                 methodIl.Emit (OpCodes.Ldarg_0)
                 methodIl.Emit (OpCodes.Ldarg_0)
                 methodIl.Emit (OpCodes.Ldfld, fldObjPath)
@@ -139,8 +153,8 @@ module Remoting =
                         i <- i + 1
                         ()
 
-                methodIl.Emit (OpCodes.Ldc_I4, returnTypeCount)
-                methodIl.EmitCall (OpCodes.Call, executeMethodCall, [|typeof<string>; typeof<string>; typeof<string>; typeof<string>; typeof<obj[]>; typeof<Int32>|])
+                methodIl.Emit (OpCodes.Ldloc_0)
+                methodIl.EmitCall (OpCodes.Call, executeMethodCall, [|typeof<string>; typeof<string>; typeof<string>; typeof<string>; typeof<obj[]>; typeof<Type>|])
                 
                 if returnTypeCount = 0
                 then methodIl.Emit (OpCodes.Pop)
