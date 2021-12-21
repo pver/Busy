@@ -2,7 +2,8 @@ namespace Busy
 
 module rec Types =
         type Signature = string
-
+        
+        // Value type definitions
         type DBusPrimitiveValue = 
                 Invalid
                 | Byte of byte
@@ -54,6 +55,7 @@ module rec Types =
                                    | Variant _ -> VariantType
                                    | Dict (kt, _) -> DictType kt                               
 
+        // 'Type' type definitions
         type DBusPrimitiveType = 
                 InvalidType
                 | ByteType
@@ -104,6 +106,13 @@ module rec Types =
                                         | VariantType -> "v"
                                         | DictType (kt,vt) -> sprintf "{%s%s}" kt.Signature vt.Signature   
 
+        // Conversions
+        type ClrToDBusTypeConversionException() =
+            inherit System.Exception()
+            new(error : string) = 
+                (ClrToDBusTypeConversionException ())
+                then ()
+
         type ToDBus() = 
                 static member Value (value: uint32) = DBusValue.Primitive(DBusPrimitiveValue.Uint32 value)
                 static member Value (value: int32) = DBusValue.Primitive(DBusPrimitiveValue.Int32 value)
@@ -130,7 +139,26 @@ module rec Types =
                         | :? double as x -> ToDBus.Value x
                         | :? string as s -> ToDBus.Value s
                         | _ -> failwith "Only primitive values supported!"
-                
+                static member Type (``type``: System.Type) =
+                        let isIEnumerableType (t:System.Type) = t.IsGenericType && t.GetGenericTypeDefinition() = typeof<System.Collections.Generic.IEnumerable<_>>.GetGenericTypeDefinition()
+                        if ``type`` = typeof<string> then PrimitiveType StringType
+                        else if ``type`` = typeof<uint32> then PrimitiveType Uint32Type
+                        else if ``type`` = typeof<int32> then PrimitiveType Int32Type
+                        else if ``type`` = typeof<uint16> then PrimitiveType Uint16Type
+                        else if ``type`` = typeof<int16> then PrimitiveType Int16Type                        
+                        else if ``type`` = typeof<uint64> then PrimitiveType Uint64Type
+                        else if ``type`` = typeof<int64> then PrimitiveType Int64Type
+                        else if ``type`` = typeof<byte> then PrimitiveType ByteType
+                        else if ``type`` = typeof<bool> then PrimitiveType BooleanType
+                        else if ``type`` = typeof<double> || ``type`` = typeof<float> then PrimitiveType DoubleType
+                        else if ``type``.IsArray then ArrayType (ToDBus.Type (``type``.GetElementType()))
+                        else if isIEnumerableType ``type`` then ArrayType (ToDBus.Type (``type``.GetGenericArguments().[0]))
+                        else 
+                                let checkEnumerableType = ``type``.GetInterfaces() |> Array.filter isIEnumerableType |> Array.tryHead
+                                match checkEnumerableType with 
+                                | Some(x) -> ArrayType (ToDBus.Type (x.GetGenericArguments().[0]))
+                                | _ -> raise (ClrToDBusTypeConversionException (sprintf "Unsupported type specified: %s" ``type``.AssemblyQualifiedName))
+                                      
         type FromDBus() =
                 static member PrimitiveValue (value: DBusValue) =
                         match value with

@@ -164,6 +164,8 @@ let signatureTests =
 
 let createToDBusValueTestCase testCaseName (input) (expected:DBusValue) =
     testCase testCaseName <| fun _ -> Expect.equal input expected testCaseName
+let createToDBusTypeTestCase testCaseName (input) (expected:DBusType) =
+    testCase testCaseName <| fun _ -> Expect.equal input expected testCaseName
 
 [<Tests>]
 let toDBusTests =
@@ -179,6 +181,25 @@ let toDBusTests =
     createToDBusValueTestCase "string ToDBus should convert" (ToDBus.Value "abc") (Primitive (DBusPrimitiveValue.String "abc"))
     createToDBusValueTestCase "bool true ToDBus should convert" (ToDBus.Value true) (Primitive (DBusPrimitiveValue.Boolean true))
     createToDBusValueTestCase "bool false ToDBus should convert" (ToDBus.Value false) (Primitive (DBusPrimitiveValue.Boolean false))
+
+    createToDBusTypeTestCase "type uint32 ToDBus should convert" (ToDBus.Type typeof<uint32>) (PrimitiveType DBusPrimitiveType.Uint32Type)
+    createToDBusTypeTestCase "type int32 ToDBus should convert" (ToDBus.Type typeof<int32>) (PrimitiveType DBusPrimitiveType.Int32Type)
+    createToDBusTypeTestCase "type int16 ToDBus should convert" (ToDBus.Type typeof<int16>) (PrimitiveType DBusPrimitiveType.Int16Type)
+    createToDBusTypeTestCase "type uint16 ToDBus should convert" (ToDBus.Type typeof<uint16>) (PrimitiveType DBusPrimitiveType.Uint16Type)
+    createToDBusTypeTestCase "type int64 ToDBus should convert" (ToDBus.Type typeof<int64>) (PrimitiveType DBusPrimitiveType.Int64Type)
+    createToDBusTypeTestCase "type uint64 ToDBus should convert" (ToDBus.Type typeof<uint64>) (PrimitiveType DBusPrimitiveType.Uint64Type)
+    createToDBusTypeTestCase "type double ToDBus should convert" (ToDBus.Type typeof<double>) (PrimitiveType DBusPrimitiveType.DoubleType)
+    createToDBusTypeTestCase "type float ToDBus should convert" (ToDBus.Type typeof<float>) (PrimitiveType DBusPrimitiveType.DoubleType)
+    createToDBusTypeTestCase "type byte ToDBus should convert" (ToDBus.Type typeof<byte>) (PrimitiveType DBusPrimitiveType.ByteType)
+    createToDBusTypeTestCase "type string ToDBus should convert" (ToDBus.Type typeof<string>) (PrimitiveType DBusPrimitiveType.StringType)
+    createToDBusTypeTestCase "type bool true ToDBus should convert" (ToDBus.Type typeof<bool>) (PrimitiveType DBusPrimitiveType.BooleanType)
+    createToDBusTypeTestCase "type array ToDBus should convert" (ToDBus.Type typeof<array<bool>>) (ArrayType (PrimitiveType BooleanType))
+    createToDBusTypeTestCase "type seq ToDBus should convert" (ToDBus.Type typeof<seq<int32>>) (ArrayType (PrimitiveType Int32Type))
+    createToDBusTypeTestCase "type List ToDBus should convert" (ToDBus.Type typeof<Collections.Generic.List<int32>>) (ArrayType (PrimitiveType Int32Type))
+
+    testCase "type Object ToDBus should not convert"  <| fun _ ->
+      let convert() = ToDBus.Type typeof<obj> |> ignore
+      Expect.throwsT<ClrToDBusTypeConversionException> convert "type Object ToDBus should not convert"
   ]
 
 let createFromDBusAndToValueTestCase testCaseName (input:DBusValue) (expected:obj) =
