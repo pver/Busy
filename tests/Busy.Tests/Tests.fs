@@ -194,6 +194,7 @@ let toDBusTests =
     createToDBusTypeTestCase "type string ToDBus should convert" (ToDBus.Type typeof<string>) (PrimitiveType DBusPrimitiveType.StringType)
     createToDBusTypeTestCase "type bool true ToDBus should convert" (ToDBus.Type typeof<bool>) (PrimitiveType DBusPrimitiveType.BooleanType)
     createToDBusTypeTestCase "type array ToDBus should convert" (ToDBus.Type typeof<array<bool>>) (ArrayType (PrimitiveType BooleanType))
+    createToDBusTypeTestCase "type array of array ToDBus should convert" (ToDBus.Type typeof<array<array<bool>>>) (ArrayType(ArrayType (PrimitiveType BooleanType)))
     createToDBusTypeTestCase "type seq ToDBus should convert" (ToDBus.Type typeof<seq<int32>>) (ArrayType (PrimitiveType Int32Type))
     createToDBusTypeTestCase "type List ToDBus should convert" (ToDBus.Type typeof<Collections.Generic.List<int32>>) (ArrayType (PrimitiveType Int32Type))
 
