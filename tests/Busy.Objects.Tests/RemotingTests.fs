@@ -35,6 +35,8 @@ type IRemoteObject =
    abstract member PrimitivesInIntOut : int -> string -> double -> int
    abstract member PrimitivesInStringOut : int -> string -> double -> string
 
+    abstract member ArraysInVoidOut : int[] -> string[] -> unit
+
 let testObjectPath = "obj"
 let testInterfaceName = "ifc"
 let testDestinationName = "dest"
@@ -74,7 +76,7 @@ let createProxyTestCase (testCaseName:string)
 
 [<Tests>]
 let remotingTests =
-    testList "remoteObjectTests" [
+    testList "remoteObjectTests" [        
         testCase "Factory should only allow interface types" <| fun _ ->
             // Arrange
             let recordedMessages = new System.Collections.Generic.List<DBusMessageBody>()
@@ -169,6 +171,22 @@ let remotingTests =
             [ToDBus.Value "abcde"]
             "abcde"
 
+        createProxyTestCase "Method string and int arrays in void out" 
+            (fun proxy -> proxy.ArraysInVoidOut [|1;3;5|] [|"";"abc";"xyz"|]) 
+            [|  Array ((PrimitiveType Int32Type),[|(ToDBus.Value 1);(ToDBus.Value 3);(ToDBus.Value 5)|]);
+                Array ((PrimitiveType StringType),[|(ToDBus.Value "");(ToDBus.Value "abc");(ToDBus.Value "xyz")|])
+            |]
+            emptyDBusResult
+            voidResult
+
+        createProxyTestCase "Method empty string and int arrays in void out" 
+            (fun proxy -> proxy.ArraysInVoidOut [||] [||]) 
+            [|  Array ((PrimitiveType Int32Type),[||]);
+                Array ((PrimitiveType StringType),[||])
+            |]
+            emptyDBusResult
+            voidResult
+
         testCase "Method receiving more outputs than expected" <| fun _ ->
             // Arrange
             let recordedMessages = new System.Collections.Generic.List<DBusMessageBody>()
@@ -182,5 +200,46 @@ let remotingTests =
 
             // Assert
             Expect.throwsT<RemoteObjectInvocationException> callMethod "invocation that receives more output values than expected should throw"
+
+        testCase "Method returned error" <| fun _ ->
+            // Arrange
+            let recordedMessages = new System.Collections.Generic.List<DBusMessageBody>()
+            let fakebus = fakeRecordingBus recordedMessages (fun msg -> Ok(MessageFactory.CreateErrorForMessage msg "Failed to execute method" [||]))
+
+            let proxy = factory.GetRemoteObject<IRemoteObject> fakebus testObjectPath testInterfaceName testDestinationName
+            
+            // Act
+            let callMethod() = proxy.VoidInVoidOut()
+
+            // Assert
+            Expect.throwsT<RemoteObjectInvocationErrorException> callMethod "invocation that receives error message should throw"
+
+        testCase "Method got wrong dbus returned message type" <| fun _ ->
+            // Arrange
+            let recordedMessages = new System.Collections.Generic.List<DBusMessageBody>()
+            // should never happen that this is returned, but testing anyway
+            let fakebus = fakeRecordingBus recordedMessages (fun _ -> Ok(MessageFactory.CreateSignal "obj" "if" "member" [||] None None))
+
+            let proxy = factory.GetRemoteObject<IRemoteObject> fakebus testObjectPath testInterfaceName testDestinationName
+            
+            // Act
+            let callMethod() = proxy.VoidInVoidOut()
+
+            // Assert
+            Expect.throwsT<RemoteObjectInvocationException> callMethod "invocation that get wrong message type as result should throw"
+
+        testCase "Method call not properly sent" <| fun _ ->
+            // Arrange
+            let recordedMessages = new System.Collections.Generic.List<DBusMessageBody>()
+            // should never happen that this is returned, but testing anyway
+            let fakebus = fakeRecordingBus recordedMessages (fun _ -> Error("Something went wrong sending dbus request"))
+
+            let proxy = factory.GetRemoteObject<IRemoteObject> fakebus testObjectPath testInterfaceName testDestinationName
+            
+            // Act
+            let callMethod() = proxy.VoidInVoidOut()
+
+            // Assert
+            Expect.throwsT<RemoteObjectInvocationException> callMethod "invocation that could not be sent should throw"
 
     ]

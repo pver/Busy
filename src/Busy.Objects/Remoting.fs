@@ -16,6 +16,12 @@ module Remoting =
                 (RemoteObjectInvocationException ())
                 then ()
 
+    type RemoteObjectInvocationErrorException() =
+            inherit Exception()
+            new(error : string) = 
+                (RemoteObjectInvocationErrorException ())
+                then ()
+
     type RemoteObjectBase() =
             member val private _bus = Unchecked.defaultof<IBus> with get, set
             new(bus : IBus) as this = 
@@ -25,27 +31,31 @@ module Remoting =
                     this._bus <- bus
 
             member this.ExecuteMethodCall (objectPath : string) (interfaceName : string) (memberName : string) (destinationBusName : string) (args : obj[]) (expectedOutputType : Type) = 
-                let dbusArgs = if isNull args then [||] else args |> Array.map (Types.ToDBus.PrimitiveValue)
+                let dbusArgs = if isNull args then [||] else args |> Array.map (Types.ToDBus.Value)
                 let msg = MessageFactory.CreateMethodCall objectPath (Some (interfaceName)) memberName dbusArgs None (Some (destinationBusName))
                 let callResult = this._bus.SendAndWait (msg)
                 match callResult with
                 | Error e -> raise (new RemoteObjectInvocationException(e))
                 | Ok result ->
-                    let outputs = (result.Body.Select (Types.FromDBus.PrimitiveValue)).ToArray ()
-                    let actualOutputCount = outputs.Length
-                    let expectedOutputCount = if expectedOutputType = typeof<Void> then 0 else 1
-                    if expectedOutputCount <> actualOutputCount
-                    then 
-                        let msg = sprintf "Expected number of output values %d does not match actual number of output values %d." expectedOutputCount actualOutputCount
-                        let exc = new RemoteObjectInvocationException(msg)
-                        exc.Data.["ObjectPath"] <- objectPath
-                        exc.Data.["InterfaceName"] <- interfaceName
-                        exc.Data.["MemberName"] <- memberName
-                        exc.Data.["DestinationBusName"] <- destinationBusName
-                        exc.Data.["ExpectedOutputCount"] <- expectedOutputCount
-                        exc.Data.["ActualOutputCount"] <- actualOutputCount
-                        raise exc
-                    outputs
+                    match result.MessageType with 
+                    | MessageTypes.DBusMessageType.MethodReturn ->
+                        let outputs = (result.Body.Select (Types.FromDBus.PrimitiveValue)).ToArray ()
+                        let actualOutputCount = outputs.Length
+                        let expectedOutputCount = if expectedOutputType = typeof<Void> then 0 else 1
+                        if expectedOutputCount <> actualOutputCount
+                        then 
+                            let msg = sprintf "Expected number of output values %d does not match actual number of output values %d." expectedOutputCount actualOutputCount
+                            let exc = new RemoteObjectInvocationException(msg)
+                            exc.Data.["ObjectPath"] <- objectPath
+                            exc.Data.["InterfaceName"] <- interfaceName
+                            exc.Data.["MemberName"] <- memberName
+                            exc.Data.["DestinationBusName"] <- destinationBusName
+                            exc.Data.["ExpectedOutputCount"] <- expectedOutputCount
+                            exc.Data.["ActualOutputCount"] <- actualOutputCount
+                            raise exc
+                        outputs
+                    | MessageTypes.DBusMessageType.Error -> raise (new RemoteObjectInvocationErrorException("Remote object returned error"))
+                    | _ -> raise (new RemoteObjectInvocationException("Unexpected dbus value received for method call"))
 
     type RemoteObjectTypeFactory() =
         static let mutable _moduleBuilder = Unchecked.defaultof<System.Reflection.Emit.ModuleBuilder>

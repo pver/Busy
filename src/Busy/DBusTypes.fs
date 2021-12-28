@@ -1,6 +1,7 @@
 namespace Busy
 
 module rec Types =
+
         type Signature = string
         
         // Value type definitions
@@ -113,6 +114,12 @@ module rec Types =
                 (ClrToDBusTypeConversionException ())
                 then ()
 
+        type ClrToDBusValueConversionException() =
+            inherit System.Exception()
+            new(error : string) = 
+                (ClrToDBusValueConversionException ())
+                then ()
+
         type ToDBus() = 
                 static member Value (value: uint32) = DBusValue.Primitive(DBusPrimitiveValue.Uint32 value)
                 static member Value (value: int32) = DBusValue.Primitive(DBusPrimitiveValue.Int32 value)
@@ -126,7 +133,31 @@ module rec Types =
                 static member Value (value: string) = 
                         if isNull value then DBusValue.Primitive(DBusPrimitiveValue.String "")
                         else DBusValue.Primitive(DBusPrimitiveValue.String value) 
+
+                static member private CollectionValue (valueType:System.Type) (values:seq<obj>) =
+                        let dbusValueType = ToDBus.Type valueType
+                        let dbusValues = values |> Seq.map ToDBus.Value |> Seq.toArray
+                        DBusValue.Array(dbusValueType, dbusValues)
+
+                static member Value (value: seq<'a>) =
+                        if isNull value then raise (ClrToDBusValueConversionException "Can't convert null value to DBus!")
+                        ToDBus.CollectionValue (typeof<'a>) value
+
+                static member Value (value: obj) = 
+                        if isNull value then raise (ClrToDBusValueConversionException "Can't convert null value to DBus!")
+                        
+                        let valueType = value.GetType()
+                        if valueType.IsPrimitive || valueType = typeof<string> then (ToDBus.PrimitiveValue value)
+                        else if valueType.IsArray 
+                        then 
+                                let enumerable = value :?> System.Collections.IEnumerable
+                                let mySeq = seq { let i = enumerable.GetEnumerator() in while i.MoveNext() do yield i.Current } |> Seq.toList
+                                ToDBus.CollectionValue (valueType.GetElementType()) mySeq
+                        else 
+                                raise (ClrToDBusValueConversionException "Unsupported object type!")
+                        
                 static member PrimitiveValue (value: obj) = 
+                        if isNull value then raise (ClrToDBusValueConversionException "Can't convert null value to DBus!")
                         match value with
                         | :? uint32 as x -> ToDBus.Value x
                         | :? int32 as x -> ToDBus.Value x
@@ -138,7 +169,7 @@ module rec Types =
                         | :? bool as x -> ToDBus.Value x
                         | :? double as x -> ToDBus.Value x
                         | :? string as s -> ToDBus.Value s
-                        | _ -> failwith "Only primitive values supported!"
+                        | _ -> raise (ClrToDBusValueConversionException "Only primitive values supported when calling PrimitiveValue!")
                 static member Type (``type``: System.Type) =
                         let isIEnumerableType (t:System.Type) = t.IsGenericType && t.GetGenericTypeDefinition() = typeof<System.Collections.Generic.IEnumerable<_>>.GetGenericTypeDefinition()
                         if ``type`` = typeof<string> then PrimitiveType StringType
