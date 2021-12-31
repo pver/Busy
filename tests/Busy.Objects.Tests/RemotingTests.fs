@@ -35,7 +35,9 @@ type IRemoteObject =
    abstract member PrimitivesInIntOut : int -> string -> double -> int
    abstract member PrimitivesInStringOut : int -> string -> double -> string
 
-    abstract member ArraysInVoidOut : int[] -> string[] -> unit
+   abstract member ArraysInVoidOut : int[] -> string[] -> unit
+   abstract member ArraysNestedInVoidOut : array<array<int>> -> unit
+
 
 let testObjectPath = "obj"
 let testInterfaceName = "ifc"
@@ -183,6 +185,20 @@ let remotingTests =
             (fun proxy -> proxy.ArraysInVoidOut [||] [||]) 
             [|  Array ((PrimitiveType Int32Type),[||]);
                 Array ((PrimitiveType StringType),[||])
+            |]
+            emptyDBusResult
+            voidResult
+
+        createProxyTestCase "Method nested int arrays in void out" 
+            (fun proxy -> proxy.ArraysNestedInVoidOut [| [|1;3;5|] ; [|4;5|] |])
+            [|  Array
+                    (ArrayType (PrimitiveType Int32Type),
+                    [|Array
+                        (PrimitiveType Int32Type,
+                            [|Primitive (Int32 1); Primitive (Int32 3); Primitive (Int32 5)|]);
+                        Array
+                        (PrimitiveType Int32Type,[|Primitive (Int32 4); Primitive (Int32 5)|])
+                    |])
             |]
             emptyDBusResult
             voidResult
