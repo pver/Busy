@@ -203,6 +203,14 @@ let toDBusTests =
     testCase "type Object ToDBus should not convert"  <| fun _ ->
       let convert() = ToDBus.Type typeof<obj> |> ignore
       Expect.throwsT<ClrToDBusTypeConversionException> convert "type Object ToDBus should not convert"
+
+    testCase "null ToDBus should not convert"  <| fun _ ->
+      let convert() = ToDBus.Value (null :> obj) |> ignore
+      Expect.throwsT<ClrToDBusValueConversionException> convert "null ToDBus should not convert"
+
+    testCase "null ToDBus type should not convert"  <| fun _ ->
+      let convert() = ToDBus.Type (null) |> ignore
+      Expect.throwsT<ClrToDBusTypeConversionException> convert "null ToDBus type should not convert"
   ]
 
 let createFromDBusAndToValueTestCase testCaseName (input:DBusValue) (expected:obj) =

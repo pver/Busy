@@ -148,6 +148,7 @@ module rec Types =
                         ToDBus.CollectionValue (typeof<'a>) (value |> Seq.map (fun x -> x :> obj))
 
                 static member Value (value: obj) = 
+                        // Todo: pass in target type too, strings should be converted to empty string!
                         if isNull value then raise (ClrToDBusValueConversionException "Can't convert null value to DBus!")
                         
                         let valueType = value.GetType()
@@ -174,7 +175,9 @@ module rec Types =
                         | :? double as x -> ToDBus.Value x
                         | :? string as s -> ToDBus.Value s
                         | _ -> raise (ClrToDBusValueConversionException "Only primitive values supported when calling PrimitiveValue!")
+
                 static member Type (``type``: System.Type) =
+                        if isNull ``type`` then raise (ClrToDBusTypeConversionException "Can't convert null value to DBus type!")
                         let isIEnumerableType (t:System.Type) = t.IsGenericType && t.GetGenericTypeDefinition() = typeof<System.Collections.Generic.IEnumerable<_>>.GetGenericTypeDefinition()
                         if ``type`` = typeof<string> then PrimitiveType StringType
                         else if ``type`` = typeof<uint32> then PrimitiveType Uint32Type
