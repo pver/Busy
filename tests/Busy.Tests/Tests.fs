@@ -181,6 +181,8 @@ let toDBusTests =
     createToDBusValueTestCase "string ToDBus should convert" (ToDBus.Value "abc") (Primitive (DBusPrimitiveValue.String "abc"))
     createToDBusValueTestCase "bool true ToDBus should convert" (ToDBus.Value true) (Primitive (DBusPrimitiveValue.Boolean true))
     createToDBusValueTestCase "bool false ToDBus should convert" (ToDBus.Value false) (Primitive (DBusPrimitiveValue.Boolean false))
+    createToDBusValueTestCase "array ToDBus should convert"  (ToDBus.Value [|1;3|]) (Array ((PrimitiveType Int32Type),[|Primitive (DBusPrimitiveValue.Int32 1);Primitive (DBusPrimitiveValue.Int32 3)|]))
+    createToDBusValueTestCase "seq ToDBus should convert"  (ToDBus.Value [1;3]) (Array ((PrimitiveType Int32Type),[|Primitive (DBusPrimitiveValue.Int32 1);Primitive (DBusPrimitiveValue.Int32 3)|]))
 
     createToDBusTypeTestCase "type uint32 ToDBus should convert" (ToDBus.Type typeof<uint32>) (PrimitiveType DBusPrimitiveType.Uint32Type)
     createToDBusTypeTestCase "type int32 ToDBus should convert" (ToDBus.Type typeof<int32>) (PrimitiveType DBusPrimitiveType.Int32Type)

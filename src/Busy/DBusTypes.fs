@@ -139,9 +139,13 @@ module rec Types =
                         let dbusValues = values |> Seq.map ToDBus.Value |> Seq.toArray
                         DBusValue.Array(dbusValueType, dbusValues)
 
+                static member Value (value: array<'a>) =
+                        if isNull value then raise (ClrToDBusValueConversionException "Can't convert null value to DBus!")
+                        ToDBus.CollectionValue (typeof<'a>) (value |> Array.toSeq |> Seq.map (fun x -> x :> obj))
+
                 static member Value (value: seq<'a>) =
                         if isNull value then raise (ClrToDBusValueConversionException "Can't convert null value to DBus!")
-                        ToDBus.CollectionValue (typeof<'a>) value
+                        ToDBus.CollectionValue (typeof<'a>) (value |> Seq.map (fun x -> x :> obj))
 
                 static member Value (value: obj) = 
                         if isNull value then raise (ClrToDBusValueConversionException "Can't convert null value to DBus!")
